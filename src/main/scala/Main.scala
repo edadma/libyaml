@@ -44,7 +44,13 @@ import scala.collection.mutable.ListBuffer
 
 object Main extends App {
 
-  println(parseFromString("{3: asdf, 4.5: 2021-09-14}"))
+  println(parseFromString("""
+      |---
+      |- 5
+      |- {3: [asdf, 6], 4.5: 2021-09-14}
+      |---
+      |123
+      |""".stripMargin))
 
   def parseFromString(s: String): Any = {
     val parser = new Parser
