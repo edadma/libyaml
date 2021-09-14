@@ -38,6 +38,7 @@ object LibYAML {
   type yaml_encoding_t       = CInt // enum
   type yaml_write_handler_t  = CFuncPtr3[Ptr[Byte], Ptr[CUnsignedChar], CSize, CInt]
   type yaml_write_handler_tp = Ptr[yaml_write_handler_t]
+  type yaml_break_t          = CInt // enum
 
   def yaml_get_version_string: CString                                                        = extern //59
   def yaml_token_delete(token: yaml_token_t): Unit                                            = extern //345
@@ -61,5 +62,8 @@ object LibYAML {
   def yaml_emitter_set_indent(emitter: yaml_emitter_tp, indent: CInt): Unit                = extern //1868
   def yaml_emitter_set_width(emitter: yaml_emitter_tp, width: CInt): Unit                  = extern //1878
   def yaml_emitter_set_unicode(emitter: yaml_emitter_tp, unicode: CInt): Unit              = extern //1888
+  def yaml_emitter_set_break(emitter: yaml_emitter_tp, line_break: yaml_break_t): Unit     = extern //1898
+  def yaml_emitter_emit(emitter: yaml_emitter_tp, event: yaml_event_tp): CInt              = extern //1915
+  def yaml_emitter_flush(emitter: yaml_emitter_tp): CInt                                   = extern //1969
 
 }

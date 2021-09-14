@@ -83,6 +83,14 @@ package object libyaml {
     final val UTF16BE = new Encoding(3)
   }
 
+  implicit class Break(val value: yaml_break_t) extends AnyVal
+  object Break {
+    final val ANY  = new Break(0)
+    final val CR   = new Break(1)
+    final val LN   = new Break(2)
+    final val CRLN = new Break(3)
+  }
+
   case class Mark(index: Int, line: Int, column: Int)
 
   implicit class Scalar(val scalar: Ptr[data_scalar]) extends AnyVal {
