@@ -73,6 +73,14 @@ package object libyaml {
     final val FOLDED        = new ScalarStyle(5)
   }
 
+  implicit class Encoding(val value: CInt) extends AnyVal
+  object Encoding {
+    final val ANY     = new Encoding(0)
+    final val UTF8    = new Encoding(1)
+    final val UTF16LE = new Encoding(2)
+    final val UTF16BE = new Encoding(3)
+  }
+
   case class Mark(index: Int, line: Int, column: Int)
 
   implicit class Scalar(val scalar: Ptr[data_scalar]) extends AnyVal {
@@ -87,6 +95,10 @@ package object libyaml {
     def plainImplicit: Boolean = bool(scalar._6)
 
     def quotedImplicit: Boolean = bool(scalar._7)
+  }
+
+  implicit class StreamStart(val enc: Ptr[yaml_encoding_t]) extends AnyVal {
+    def encoding: Encoding = !enc
   }
 
   class Event {

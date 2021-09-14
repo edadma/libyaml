@@ -34,6 +34,7 @@ object LibYAML {
   type yaml_event_tp       = Ptr[yaml_event_t]
   type yaml_error_type_t   = CInt // enum
   type yaml_scalar_style_t = CInt // enum
+  type yaml_encoding_t     = CInt // enum
 
   def yaml_get_version_string: CString                                                        = extern //59
   def yaml_token_delete(token: yaml_token_t): Unit                                            = extern //345
