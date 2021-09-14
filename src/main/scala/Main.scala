@@ -97,13 +97,13 @@ object Main extends App {
     }
 
     def parseMapping: YAMLMappping = {
-      val buf = new ListBuffer[(YAMLValue, YAMLValue)]
+      val buf = new ListBuffer[YAMLPair]
 
       while (next != EventType.MAPPING_END) {
         val key = parseValue
 
         next
-        buf.append((key, parseValue))
+        buf.append(YAMLPair(key, parseValue))
       }
 
       YAMLMappping(buf.toList)
@@ -144,23 +144,24 @@ object Main extends App {
   }
 
   trait YAML
-  case class YAMLStream(docs: List[YAMLDocument])                extends YAML
-  case class YAMLDocument(doc: YAMLValue)                        extends YAML
-  trait YAMLValue                                                extends YAML { val v: Any }
-  trait YAMLScalar                                               extends YAMLValue
-  case class YAMLBoolean(v: Boolean)                             extends YAMLScalar
-  case class YAMLBinary(v: ArraySeq[Byte])                       extends YAMLScalar
-  case class YAMLInteger(v: Int)                                 extends YAMLScalar
-  case class YAMLFloat(v: Double)                                extends YAMLScalar
-  case class YAMLString(v: String)                               extends YAMLScalar
-  case object YAMLNull                                           extends YAMLScalar { val v: Any = null }
-  case class YAMLTimestamp(v: String)                            extends YAMLScalar
-  trait YAMLCollection                                           extends YAMLValue
-  case class YAMLSequence(v: List[YAMLValue])                    extends YAMLCollection
-  case class YAMLSet(v: List[YAMLValue])                         extends YAMLCollection
-  case class YAMLMappping(v: List[(YAMLValue, YAMLValue)])       extends YAMLCollection
-  case class YAMLOrderedMapping(v: List[(YAMLValue, YAMLValue)]) extends YAMLCollection
-  case class YAMLPairs(v: List[(YAMLValue, YAMLValue)])          extends YAMLCollection
-  case class YAMLOther(tag: String, v: String)                   extends YAMLValue
+  case class YAMLStream(docs: List[YAMLDocument])       extends YAML
+  case class YAMLDocument(doc: YAMLValue)               extends YAML
+  case class YAMLPair(key: YAMLValue, value: YAMLValue) extends YAML
+  trait YAMLValue                                       extends YAML { val v: Any }
+  trait YAMLScalar                                      extends YAMLValue
+  case class YAMLBoolean(v: Boolean)                    extends YAMLScalar
+  case class YAMLBinary(v: ArraySeq[Byte])              extends YAMLScalar
+  case class YAMLInteger(v: Int)                        extends YAMLScalar
+  case class YAMLFloat(v: Double)                       extends YAMLScalar
+  case class YAMLString(v: String)                      extends YAMLScalar
+  case object YAMLNull                                  extends YAMLScalar { val v: Any = null }
+  case class YAMLTimestamp(v: String)                   extends YAMLScalar
+  trait YAMLCollection                                  extends YAMLValue
+  case class YAMLSequence(v: List[YAMLValue])           extends YAMLCollection
+  case class YAMLSet(v: List[YAMLValue])                extends YAMLCollection
+  case class YAMLMappping(v: List[YAMLPair])            extends YAMLCollection
+  case class YAMLOrderedMapping(v: List[YAMLPair])      extends YAMLCollection
+  case class YAMLPairs(v: List[YAMLPair])               extends YAMLCollection
+  case class YAMLOther(tag: String, v: String)          extends YAMLValue
 
 }
