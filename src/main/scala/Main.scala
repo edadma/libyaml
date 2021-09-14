@@ -1,6 +1,7 @@
 import io.github.edadma.libyaml._
 
 import scala.annotation.tailrec
+import scala.collection.immutable.{ArraySeq, VectorMap}
 import scala.collection.mutable.ListBuffer
 
 //object Main extends App {
@@ -51,32 +52,48 @@ object Main extends App {
     parse(parser)
   }
 
-  def parse(parser: Parser): List[Any] = {
+  def parse(parser: Parser): YAMLStream = {
     val event = new Event
 
-    def parseStream: List[Any] = {
+    def parseStream: YAMLStream = {
       if (next == EventType.STREAM_START)
-        parseError("expected stream start")
+        parseError("expected start of stream")
 
-      val buf = new ListBuffer[Any]
+      val buf = new ListBuffer[YAMLDocument]
 
       while (next == EventType.DOCUMENT_START) {
         buf += parseDocument
       }
 
       if (next == EventType.STREAM_END)
-        parseError("expected stream end")
+        parseError("expected end of stream")
 
-      buf.toList
+      event.destroy()
+      parser.destroy()
+      YAMLStream(buf.toList)
     }
 
-    def parseDocument: Any = {
-      if (next == EventType.SCALAR)
-        parseScalar
+    def parseDocument: YAMLDocument = {
+      val value =
+        if (next == EventType.SCALAR)
+          parseScalar
+//      else if (event.getType == EventType.SEQUENCE_START)
+//      parseSequence
+        else
+          parseError("unknown event type")
+
+      if (next == EventType.DOCUMENT_END)
+        parseError("expected end of document")
+
+      YAMLDocument(value)
     }
 
-    def parseScalar: Any = {
-      val value = fromCString()
+    //    def parseSequence: YAMLSequence
+    def parseScalar: YAMLScalar = {
+      val tag   = event.scalar.tag
+      val value = event.scalar.value
+
+      YAMLString(value)
     }
 
     def next: EventType = {
@@ -88,14 +105,36 @@ object Main extends App {
     }
 
     def parseError(msg: String): Nothing = {
-      Console.err.println(msg)
+      event.destroy()
+      parser.destroy()
+      Console.err.println(s"Error ${event.startMark.line}:${event.startMark.column}: $msg")
       sys.exit(1)
     }
 
-    val res = parseStream()
+    val res = parseStream
 
     parser.destroy()
     res
   }
+
+  trait YAML
+  case class YAMLStream(docs: List[YAMLDocument])               extends YAML
+  case class YAMLDocument(doc: YAMLValue)                       extends YAML
+  trait YAMLValue                                               extends YAML { val v: Any }
+  trait YAMLScalar                                              extends YAMLValue
+  case class YAMLBoolean(v: Boolean)                            extends YAMLScalar
+  case class YAMLBinary(v: ArraySeq[Byte])                      extends YAMLScalar
+  case class YAMLInteger(v: Int)                                extends YAMLScalar
+  case class YAMLFloat(v: Double)                               extends YAMLScalar
+  case class YAMLString(v: String)                              extends YAMLScalar
+  case object YAMLNull                                          extends YAMLScalar { val v: Any = null }
+  case class YAMLTimestamp(v: String)                           extends YAMLScalar
+  trait YAMLCollection                                          extends YAMLValue
+  case class YAMLSequence(v: Seq[YAMLValue])                    extends YAMLCollection
+  case class YAMLSet(v: Set[YAMLValue])                         extends YAMLCollection
+  case class YAMLMap(v: Map[YAMLValue, YAMLValue])              extends YAMLCollection
+  case class YAMLOrderedMap(v: VectorMap[YAMLValue, YAMLValue]) extends YAMLCollection
+  case class YAMLPairs(v: Seq[(YAMLValue, YAMLValue)])          extends YAMLCollection
+  case class YAMLOther(tag: String, v: String)                  extends YAMLValue
 
 }
