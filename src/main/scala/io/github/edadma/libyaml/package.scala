@@ -8,6 +8,8 @@ import scala.scalanative.unsigned._
 
 package object libyaml {
 
+  private def bool(a: CInt): Boolean = if (a == 0) false else true
+
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
   object ErrorType {
     final val NO_ERROR       = new ErrorType(0)
@@ -61,12 +63,44 @@ package object libyaml {
     final val MAPPING_END    = new EventType(10)
   }
 
+  implicit class ScalarStyle(val value: yaml_scalar_style_t) extends AnyVal
+  object ScalarStyle {
+    final val ANY           = new ScalarStyle(0)
+    final val PLAIN         = new ScalarStyle(1)
+    final val SINGLE_QUOTED = new ScalarStyle(2)
+    final val DOUBLE_QUOTED = new ScalarStyle(3)
+    final val LITERAL       = new ScalarStyle(4)
+    final val FOLDED        = new ScalarStyle(5)
+  }
+
+  case class Mark(index: Int, line: Int, column: Int)
+
+  implicit class Scalar(val scalar: Ptr[data_scalar]) extends AnyVal {
+    def anchor: String = fromCString(scalar._2)
+
+    def tag: String = fromCString(scalar._3)
+
+    def value: String = fromCString(scalar._4)
+
+    def length: Int = scalar._5.toInt
+
+    def plainImplicit: Boolean = bool(scalar._6)
+
+    def quotedImplicit: Boolean = bool(scalar._7)
+  }
+
   class Event {
     private[libyaml] val event: yaml_event_tp = malloc(sizeof[yaml_event_t]).asInstanceOf[yaml_event_tp]
 
     event._1 = EventType.NO_EVENT.value
 
     def getType: EventType = event._1
+
+    def scalar: Scalar = Scalar(event.asInstanceOf[Ptr[data_scalar]])
+
+    def startMark: Mark = Mark(event._3._1.toInt, event._3._2.toInt, event._3._3.toInt)
+
+    def endMark: Mark = Mark(event._4._1.toInt, event._4._2.toInt, event._4._3.toInt)
 
     def delete(): Unit = yaml_event_delete(event)
 

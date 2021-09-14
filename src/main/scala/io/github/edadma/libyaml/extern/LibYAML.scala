@@ -29,9 +29,11 @@ object LibYAML {
   type event_type_t      = CInt // enum
   type yaml_mark_t       = CStruct3[CSize, CSize, CSize]
   type yaml_event_t =
-    CStruct4[event_type_t, /* 56 bytes of padding */ CArray[Byte, Digit2[_5, _6]], yaml_mark_t, yaml_mark_t]
-  type yaml_event_tp     = Ptr[yaml_event_t]
-  type yaml_error_type_t = CInt // enum
+    CStruct4[event_type_t, /* 52 bytes of padding */ CArray[Byte, Digit2[_5, _2]], yaml_mark_t, yaml_mark_t]
+  type data_scalar         = CStruct8[CLong, CString, CString, CString, CSize, CInt, CInt, CInt]
+  type yaml_event_tp       = Ptr[yaml_event_t]
+  type yaml_error_type_t   = CInt // enum
+  type yaml_scalar_style_t = CInt // enum
 
   def yaml_get_version_string: CString                                                        = extern //59
   def yaml_token_delete(token: yaml_token_t): Unit                                            = extern //345
