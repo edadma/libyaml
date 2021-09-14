@@ -27,7 +27,9 @@ object LibYAML {
   type yaml_token_type_t = CInt // enum
   type yaml_token_t      = CStruct2[yaml_token_type_t, /* 76 bytes of padding */ CArray[Byte, Digit2[_7, _6]]] // todo: 269
   type event_type_t      = CInt // enum
-  type yaml_event_t      = CStruct2[event_type_t, /* 100 bytes of padding */ CArray[Byte, Digit3[_1, _0, _0]]] // todo: 386
+  type yaml_mark_t       = CStruct3[CSize, CSize, CSize]
+  type yaml_event_t =
+    CStruct4[event_type_t, /* 56 bytes of padding */ CArray[Byte, Digit2[_5, _6]], yaml_mark_t, yaml_mark_t]
   type yaml_event_tp     = Ptr[yaml_event_t]
   type yaml_error_type_t = CInt // enum
 
