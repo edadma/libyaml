@@ -10,14 +10,14 @@ package object libyaml {
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
   object ErrorType {
-    final val YAML_NO_ERROR       = new ErrorType(0)
-    final val YAML_MEMORY_ERROR   = new ErrorType(1)
-    final val YAML_READER_ERROR   = new ErrorType(2)
-    final val YAML_SCANNER_ERROR  = new ErrorType(3)
-    final val YAML_PARSER_ERROR   = new ErrorType(4)
-    final val YAML_COMPOSER_ERROR = new ErrorType(5)
-    final val YAML_WRITER_ERROR   = new ErrorType(6)
-    final val YAML_EMITTER_ERROR  = new ErrorType(7)
+    final val NO_ERROR       = new ErrorType(0)
+    final val MEMORY_ERROR   = new ErrorType(1)
+    final val READER_ERROR   = new ErrorType(2)
+    final val SCANNER_ERROR  = new ErrorType(3)
+    final val PARSER_ERROR   = new ErrorType(4)
+    final val COMPOSER_ERROR = new ErrorType(5)
+    final val WRITER_ERROR   = new ErrorType(6)
+    final val EMITTER_ERROR  = new ErrorType(7)
   }
 
   implicit class TokenType(val value: yaml_token_type_t) extends AnyVal
@@ -63,6 +63,8 @@ package object libyaml {
 
   class Event {
     private[libyaml] val event: yaml_event_tp = malloc(sizeof[yaml_event_t]).asInstanceOf[yaml_event_tp]
+
+    event._1 = EventType.NO_EVENT.value
 
     def getType: EventType = event._1
 
