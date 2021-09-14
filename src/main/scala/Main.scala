@@ -43,12 +43,12 @@ import scala.collection.mutable.ListBuffer
 
 object Main extends App {
 
-  println(parseFromString("123"))
+  println(parseFromString("[3, asdf, 4.5, 2021-09-14]"))
 
   def parseFromString(s: String): Any = {
     val parser = new Parser
 
-    parser.setInputString("a: b")
+    parser.setInputString(s)
     parse(parser)
   }
 
@@ -56,9 +56,6 @@ object Main extends App {
     val event = new Event
 
     def parseStream: YAMLStream = {
-      if (next == EventType.STREAM_START)
-        parseError("expected start of stream")
-
       val buf = new ListBuffer[YAMLDocument]
 
       while (next == EventType.DOCUMENT_START) {
@@ -68,8 +65,6 @@ object Main extends App {
       if (next == EventType.STREAM_END)
         parseError("expected end of stream")
 
-      event.destroy()
-      parser.destroy()
       YAMLStream(buf.toList)
     }
 
@@ -80,10 +75,10 @@ object Main extends App {
 //      else if (event.getType == EventType.SEQUENCE_START)
 //      parseSequence
         else
-          parseError("unknown event type")
+          parseError(s"unknown event type: ${event.getType.value}")
 
-      if (next == EventType.DOCUMENT_END)
-        parseError("expected end of document")
+      if (next != EventType.DOCUMENT_END)
+        parseError(s"expected end of document: ${event.getType.value}")
 
       YAMLDocument(value)
     }
@@ -111,8 +106,12 @@ object Main extends App {
       sys.exit(1)
     }
 
+    if (next != EventType.STREAM_START)
+      parseError("expected start of stream")
+
     val res = parseStream
 
+    event.destroy()
     parser.destroy()
     res
   }
