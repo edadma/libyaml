@@ -48,7 +48,7 @@ object Main extends App {
     parseFromString("""
         |---
         |- 5
-        |- {3: [asdf, 6], 4.5: 2021-09-14}
+        |- {3: [asdf, null], 4.5: 2021-09-14}
         |---
         |123
         |""".stripMargin)

@@ -141,15 +141,15 @@ package object libyaml {
     def streamStartEventInitialize(encoding: yaml_encoding_t): Int =
       yaml_stream_start_event_initialize(event, encoding)
     def streamEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_stream_end_event_initialize(event)
-    def documentStartEventInitialize(version_directive: Ptr[yaml_version_directive_t],
-                                     tag_directives_start: Ptr[yaml_tag_directive_t],
-                                     tag_directives_end: Ptr[yaml_tag_directive_t],
-                                     _implicit: Int): Int =
-      yaml_document_start_event_initialize(event,
-                                           version_directive,
-                                           tag_directives_start,
-                                           tag_directives_end,
-                                           _implicit)
+//    def documentStartEventInitialize(version_directive: Ptr[yaml_version_directive_t],
+//                                     tag_directives_start: Ptr[yaml_tag_directive_t],
+//                                     tag_directives_end: Ptr[yaml_tag_directive_t],
+//                                     _implicit: Int): Int =
+//      yaml_document_start_event_initialize(event,
+//                                           version_directive,
+//                                           tag_directives_start,
+//                                           tag_directives_end,
+//                                           _implicit)
     def documentEndEventInitialize(_implicit: Int): Int =
       yaml_document_end_event_initialize(event, _implicit)
     def aliasEventInitialize(anchor: Ptr[yaml_char_t]): Int =
@@ -271,7 +271,40 @@ package object libyaml {
       val tag   = event.scalar.tag
       val value = event.scalar.value
 
+//      trait ValueType
+//      case object IntValue   extends ValueType
+//      case object StrValue   extends ValueType
+//      case object FloatValue extends ValueType
+
+      def typed: YAMLScalar = {
+        value match {
+          case "true"      => YAMLBoolean(true)
+          case "false"     => YAMLBoolean(false)
+          case "null" | "" => YAMLNull
+          case _ if value.drop(if (value.startsWith("-")) 1 else 0).forall(_.isDigit) =>
+            BigInt(value) match {
+              case n if n.isValidInt => YAMLInteger(n.toInt)
+              case n                 => YAMLBigInt(n)
+            }
+        }
+      }
+
+      if (tag ne null) {
+        val typ =
+          tag.lastIndexOf(':') match {
+            case -1  => parseError(s"unknown tag: $tag")
+            case idx => tag.substring(idx + 1)
+          }
+
+        typ match {
+          case "str" => YAMLString(value)
+          case "int" =>
+        }
+      }
       YAMLString(value)
+//      event.scalar.plainImplicit
+//      event.scalar.quotedImplicit
+
     }
 
     def next: EventType = {

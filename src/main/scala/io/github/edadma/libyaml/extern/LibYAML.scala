@@ -48,11 +48,11 @@ object LibYAML {
 
   def yaml_stream_start_event_initialize(event: Ptr[yaml_event_t], encoding: yaml_encoding_t): CInt = extern //490
   def yaml_stream_end_event_initialize(event: Ptr[yaml_event_t]): CInt                              = extern //502
-  def yaml_document_start_event_initialize(event: Ptr[yaml_event_t],
-                                           version_directive: Ptr[yaml_version_directive_t],
-                                           tag_directives_start: Ptr[yaml_tag_directive_t],
-                                           tag_directives_end: Ptr[yaml_tag_directive_t],
-                                           _implicit: CInt): CInt                           = extern //524
+//  def yaml_document_start_event_initialize(event: Ptr[yaml_event_t],
+//                                           version_directive: Ptr[yaml_version_directive_t],
+//                                           tag_directives_start: Ptr[yaml_tag_directive_t],
+//                                           tag_directives_end: Ptr[yaml_tag_directive_t],
+//                                           _implicit: CInt): CInt                           = extern //524
   def yaml_document_end_event_initialize(event: Ptr[yaml_event_t], _implicit: CInt): CInt   = extern //543
   def yaml_alias_event_initialize(event: Ptr[yaml_event_t], anchor: Ptr[yaml_char_t]): CInt = extern //555
   def yaml_scalar_event_initialize(event: Ptr[yaml_event_t],
