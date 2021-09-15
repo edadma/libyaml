@@ -46,9 +46,9 @@ object Main extends App {
 
   val result: List[Any] =
     parseFromString("""
-        |123
+        |3.4
         |""".stripMargin)
 
-  println(result)
+  println(result, result.head.getClass)
 
 }

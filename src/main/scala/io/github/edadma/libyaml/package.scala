@@ -12,6 +12,8 @@ package object libyaml {
 
   private def bool(a: CInt): Boolean = if (a == 0) false else true
 
+  private val FLOAT_REGEX = """[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?""".r
+
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
   object ErrorType {
     final val NO_ERROR       = new ErrorType(0)
@@ -271,11 +273,6 @@ package object libyaml {
       val tag   = event.scalar.tag
       val value = event.scalar.value
 
-//      trait ValueType
-//      case object IntValue   extends ValueType
-//      case object StrValue   extends ValueType
-//      case object FloatValue extends ValueType
-
       def typed: YAMLScalar = {
         value match {
           case "true"      => YAMLBoolean(true)
@@ -286,7 +283,8 @@ package object libyaml {
               case n if n.isValidInt => YAMLInteger(n.toInt)
               case n                 => YAMLBigInt(n)
             }
-          case _ => YAMLString(value)
+          case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
+          case _                              => YAMLString(value)
         }
       }
 
