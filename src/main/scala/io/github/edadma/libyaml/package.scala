@@ -91,6 +91,20 @@ package object libyaml {
     final val CRLN = new Break(3)
   }
 
+  implicit class SequenceStyle(val value: yaml_sequence_style_t) extends AnyVal
+  object SequenceStyle {
+    final val ANY_SEQUENCE   = new SequenceStyle(0)
+    final val BLOCK_SEQUENCE = new SequenceStyle(1)
+    final val FLOW_SEQUENCE  = new SequenceStyle(2)
+  }
+
+  implicit class MappingStyle(val value: yaml_mapping_style_t) extends AnyVal
+  object MappingStyle {
+    final val ANY_MAPPING   = new MappingStyle(0)
+    final val BLOCK_MAPPING = new MappingStyle(1)
+    final val FLOW_MAPPING  = new MappingStyle(2)
+  }
+
   case class Mark(index: Int, line: Int, column: Int)
 
   implicit class Scalar(val scalar: Ptr[data_scalar]) extends AnyVal {
@@ -123,6 +137,43 @@ package object libyaml {
     def startMark: Mark = Mark(event._3._1.toInt, event._3._2.toInt, event._3._3.toInt)
 
     def endMark: Mark = Mark(event._4._1.toInt, event._4._2.toInt, event._4._3.toInt)
+
+    def streamStartEventInitialize(encoding: yaml_encoding_t): Int =
+      yaml_stream_start_event_initialize(event, encoding)
+    def streamEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_stream_end_event_initialize(event)
+    def documentStartEventInitialize(version_directive: Ptr[yaml_version_directive_t],
+                                     tag_directives_start: Ptr[yaml_tag_directive_t],
+                                     tag_directives_end: Ptr[yaml_tag_directive_t],
+                                     _implicit: Int): Int =
+      yaml_document_start_event_initialize(event,
+                                           version_directive,
+                                           tag_directives_start,
+                                           tag_directives_end,
+                                           _implicit)
+    def documentEndEventInitialize(_implicit: Int): Int =
+      yaml_document_end_event_initialize(event, _implicit)
+    def aliasEventInitialize(anchor: Ptr[yaml_char_t]): Int =
+      yaml_alias_event_initialize(event, anchor)
+    def scalarEventInitialize(anchor: Ptr[yaml_char_t],
+                              tag: Ptr[yaml_char_t],
+                              value: Ptr[yaml_char_t],
+                              length: Int,
+                              plain_implicit: Int,
+                              quoted_implicit: Int,
+                              style: yaml_scalar_style_t): Int =
+      yaml_scalar_event_initialize(event, anchor, tag, value, length, plain_implicit, quoted_implicit, style)
+    def sequenceStartEventInitialize(anchor: Ptr[yaml_char_t],
+                                     tag: Ptr[yaml_char_t],
+                                     _implicit: Int,
+                                     style: SequenceStyle): Int =
+      yaml_sequence_start_event_initialize(event, anchor, tag, _implicit, style.value)
+    def sequenceEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_sequence_end_event_initialize(event)
+    def mappingStartEventInitialize(anchor: Ptr[yaml_char_t],
+                                    tag: Ptr[yaml_char_t],
+                                    _implicit: Int,
+                                    style: MappingStyle): Int =
+      yaml_mapping_start_event_initialize(event, anchor, tag, _implicit, style.value)
+    def mappingEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_mapping_end_event_initialize(event)
 
     def delete(): Unit = yaml_event_delete(event)
 

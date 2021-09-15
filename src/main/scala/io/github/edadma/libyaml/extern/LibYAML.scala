@@ -39,9 +39,43 @@ object LibYAML {
   type yaml_write_handler_t  = CFuncPtr3[Ptr[Byte], Ptr[CUnsignedChar], CSize, CInt]
   type yaml_write_handler_tp = Ptr[yaml_write_handler_t]
   type yaml_break_t          = CInt // enum
+  type yaml_char_t           = CUnsignedChar
+  type yaml_sequence_style_t = CInt // enum
+  type yaml_mapping_style_t  = CInt // enum
 
-  def yaml_get_version_string: CString                                                        = extern //59
-  def yaml_token_delete(token: yaml_token_t): Unit                                            = extern //345
+  def yaml_get_version_string: CString             = extern //59
+  def yaml_token_delete(token: yaml_token_t): Unit = extern //345
+
+  def yaml_stream_start_event_initialize(event: Ptr[yaml_event_t], encoding: yaml_encoding_t): CInt = extern //490
+  def yaml_stream_end_event_initialize(event: Ptr[yaml_event_t]): CInt                              = extern //502
+  def yaml_document_start_event_initialize(event: Ptr[yaml_event_t],
+                                           version_directive: Ptr[yaml_version_directive_t],
+                                           tag_directives_start: Ptr[yaml_tag_directive_t],
+                                           tag_directives_end: Ptr[yaml_tag_directive_t],
+                                           _implicit: CInt): CInt                           = extern //524
+  def yaml_document_end_event_initialize(event: Ptr[yaml_event_t], _implicit: CInt): CInt   = extern //543
+  def yaml_alias_event_initialize(event: Ptr[yaml_event_t], anchor: Ptr[yaml_char_t]): CInt = extern //555
+  def yaml_scalar_event_initialize(event: Ptr[yaml_event_t],
+                                   anchor: Ptr[yaml_char_t],
+                                   tag: Ptr[yaml_char_t],
+                                   value: Ptr[yaml_char_t],
+                                   length: CInt,
+                                   plain_implicit: CInt,
+                                   quoted_implicit: CInt,
+                                   style: yaml_scalar_style_t): CInt = extern //580
+  def yaml_sequence_start_event_initialize(event: Ptr[yaml_event_t],
+                                           anchor: Ptr[yaml_char_t],
+                                           tag: Ptr[yaml_char_t],
+                                           _implicit: CInt,
+                                           style: yaml_sequence_style_t): CInt = extern //603
+  def yaml_sequence_end_event_initialize(event: Ptr[yaml_event_t]): CInt       = extern //616
+  def yaml_mapping_start_event_initialize(event: Ptr[yaml_event_t],
+                                          anchor: Ptr[yaml_char_t],
+                                          tag: Ptr[yaml_char_t],
+                                          _implicit: CInt,
+                                          style: yaml_mapping_style_t): CInt = extern //635
+  def yaml_mapping_end_event_initialize(event: Ptr[yaml_event_t]): CInt      = extern //648
+
   def yaml_event_delete(event: yaml_event_t): Unit                                            = extern //657
   def yaml_parser_initialize(parser: yaml_parser_tp): Int                                     = extern //1319
   def yaml_parser_delete(parser: yaml_parser_tp): Unit                                        = extern //1328
