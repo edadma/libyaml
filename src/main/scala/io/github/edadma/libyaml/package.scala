@@ -13,6 +13,16 @@ package object libyaml {
   private def bool(a: CInt): Boolean = if (a == 0) false else true
 
   private val FLOAT_REGEX = """[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?""".r
+  val TIMESTAMP           = """
+                            |(?x)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] # (ymd)
+                            ||[0-9][0-9][0-9][0-9] # (year)
+                            | -[0-9][0-9]? # (month)
+                            | -[0-9][0-9]? # (day)
+                            | ([Tt]|[ \t]+)[0-9][0-9]? # (hour)
+                            | :[0-9][0-9] # (minute)
+                            | :[0-9][0-9] # (second)
+                            | (\.[0-9]*)? # (fraction)
+                            | (([ \t]*)Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?""".stripMargin.r
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
   object ErrorType {

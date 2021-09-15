@@ -44,11 +44,12 @@ import scala.collection.mutable.ListBuffer
 
 object Main extends App {
 
-  val result: List[Any] =
-    parseFromString("""
-        |3.4
-        |""".stripMargin)
+//  val result: List[Any] =
+//    parseFromString("""
+//        |3.4
+//        |""".stripMargin)
+//
+//  println(result, result.head.getClass)
 
-  println(result, result.head.getClass)
-
+  println(TIMESTAMP matches "2002-12-14")
 }
