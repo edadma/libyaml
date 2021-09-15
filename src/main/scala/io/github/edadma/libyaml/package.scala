@@ -286,6 +286,7 @@ package object libyaml {
               case n if n.isValidInt => YAMLInteger(n.toInt)
               case n                 => YAMLBigInt(n)
             }
+          case _ => YAMLString(value)
         }
       }
 
@@ -299,9 +300,13 @@ package object libyaml {
         typ match {
           case "str" => YAMLString(value)
           case "int" =>
+            typed match {
+              case n @ (_: YAMLInteger | _: YAMLBigInt) => n
+              case _                                    => parseError(s"not a valid integer: $value")
+            }
         }
-      }
-      YAMLString(value)
+      } else typed
+
 //      event.scalar.plainImplicit
 //      event.scalar.quotedImplicit
 
@@ -344,6 +349,7 @@ package object libyaml {
       case YAMLInteger(n)      => n
       case YAMLBigInt(n)       => n
       case YAMLFloat(n)        => n
+      case YAMLNull            => null
     }
 
   implicit def yaml2scala(d: YAMLDocument): Any = yaml2scala(d.doc)

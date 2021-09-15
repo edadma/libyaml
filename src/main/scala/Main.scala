@@ -46,10 +46,6 @@ object Main extends App {
 
   val result: List[Any] =
     parseFromString("""
-        |---
-        |- 5
-        |- {3: [asdf, null], 4.5: 2021-09-14}
-        |---
         |123
         |""".stripMargin)
 
