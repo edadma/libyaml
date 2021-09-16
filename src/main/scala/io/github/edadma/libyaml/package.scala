@@ -8,6 +8,7 @@ import scala.collection.mutable.ListBuffer
 import scala.scalanative.unsafe._
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.unsigned._
+import scala.util.matching.Regex
 
 package object libyaml {
 
@@ -15,7 +16,7 @@ package object libyaml {
 
   private val FLOAT_REGEX = """[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?""".r
   private val INT_REGEX   = """0|[+-]?[1-9][0-9]+""".r
-  val TIMESTAMP =
+  val TIMESTAMP_REGEX: Regex =
     """[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9][0-9]?-[0-9][0-9]?([Tt]|[ \t]+)[0-9][0-9]?:[0-9][0-9]:[0-9][0-9](\.[0-9]*)?(([ \t]*)Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?""".r
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
@@ -295,6 +296,8 @@ package object libyaml {
       val anchor = event.scalar.anchor
       val tag    = event.scalar.tag
       val value  = event.scalar.value
+      val plain  = event.scalar.plainImplicit
+      val quoted = event.scalar.quotedImplicit
 
       def typed: YAMLScalar =
         value match {
@@ -310,7 +313,8 @@ package object libyaml {
               case n if n.isValidInt => YAMLInteger(n.toInt)
               case n                 => YAMLBigInt(n)
             }
-          case _ => YAMLString(value)
+          case _ if TIMESTAMP_REGEX => YAMLTimestamp(value)
+          case _                    => YAMLString(value)
         }
 
       val scalar =
@@ -337,17 +341,24 @@ package object libyaml {
             case "bool" =>
               typed match {
                 case b: YAMLBoolean => b
-                case _              => parseError(s"not a valid bool: $value")
+                case _              => parseError(s"not a valid boolean: $value")
               }
             case "null" =>
               typed match {
                 case `YAMLNull` => YAMLNull
-                case _          => parseError(s"not a valid bool: $value")
+                case _          => parseError(s"not a valid null: $value")
               }
-            case "timestamp" => parseError("'timestamp' is not yet supported")
-            case _           => parseError(s"unknown type: $typ")
+            case "timestamp" =>
+              typed match {
+                case t: YAMLTimestamp => t
+                case _                => parseError(s"not a valid timestamp: $value")
+              }
+            case _ => parseError(s"unknown type: $typ")
           }
-        } else typed
+        } else if (quoted)
+          YAMLString(value)
+        else
+          typed
 
       if (anchor eq null) scalar
       else if (aliases contains anchor)

@@ -141,8 +141,20 @@ object Main extends App {
       |  - *SS # Subsequent occurrence
       |  - Ken Griffey
       |""".stripMargin
+  val ex11 =
+    """
+      |? - Detroit Tigers
+      |  - Chicago cubs
+      |:
+      |  - 2001-07-23
+      |
+      |? [ New York Yankees,
+      |    Atlanta Braves ]
+      |: [ 2001-07-02, 2001-08-12,
+      |    2001-08-14 ]
+      |""".stripMargin
   val result /*: List[Any]*/ =
-    parseFromString(ex7)
+    parseFromString(ex11)
 
   pprintln(result)
 
