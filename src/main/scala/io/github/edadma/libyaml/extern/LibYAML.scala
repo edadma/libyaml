@@ -32,6 +32,7 @@ object LibYAML {
   type yaml_event_t =
     CStruct4[event_type_t, /* 52 bytes of padding */ CArray[Byte, Digit2[_5, _2]], yaml_mark_t, yaml_mark_t]
   type data_scalar           = CStruct8[CLong, CString, CString, CString, CSize, CInt, CInt, CInt]
+  type data_alias            = CStruct2[CLong, CString]
   type yaml_event_tp         = Ptr[yaml_event_t]
   type yaml_error_type_t     = CInt // enum
   type yaml_scalar_style_t   = CInt // enum

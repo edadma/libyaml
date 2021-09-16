@@ -3,6 +3,7 @@ package io.github.edadma
 import io.github.edadma.libyaml.extern.LibYAML._
 
 import scala.collection.immutable.ArraySeq
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.scalanative.unsafe._
 import scala.scalanative.libc.stdlib._
@@ -126,6 +127,10 @@ package object libyaml {
     def quotedImplicit: Boolean = bool(scalar._7)
   }
 
+  implicit class Alias(val scalar: Ptr[data_alias]) extends AnyVal {
+    def anchor: String = fromCString(scalar._2)
+  }
+
   implicit class StreamStart(val enc: Ptr[yaml_encoding_t]) extends AnyVal {
     def encoding: Encoding = !enc
   }
@@ -217,7 +222,8 @@ package object libyaml {
   }
 
   def parse(parser: Parser): YAMLStream = {
-    val event = new Event
+    val event   = new Event
+    val aliases = new mutable.HashMap[String, YAMLValue]
 
     def parseStream: YAMLStream = {
       val buf = new ListBuffer[YAMLDocument]
@@ -248,8 +254,12 @@ package object libyaml {
         parseSequence
       else if (event.getType == EventType.MAPPING_START)
         parseMapping
+      else if (event.getType == EventType.ALIAS)
+        parseAlias
       else
         parseError(s"unknown value event type: ${event.getType.value}")
+
+    def parseAlias: YAMLValue = {}
 
     def parseSequence: YAMLSequence = {
       val buf = new ListBuffer[YAMLValue]
@@ -273,8 +283,9 @@ package object libyaml {
     }
 
     def parseScalar: YAMLScalar = {
-      val tag   = event.scalar.tag
-      val value = event.scalar.value
+      val anchor = event.scalar.anchor
+      val tag    = event.scalar.tag
+      val value  = event.scalar.value
 
       def typed: YAMLScalar =
         value match {
@@ -293,40 +304,50 @@ package object libyaml {
           case _ => YAMLString(value)
         }
 
-      if (tag ne null) {
-        val typ =
-          tag.lastIndexOf(':') match {
-            case -1  => parseError(s"unknown tag: $tag")
-            case idx => tag.substring(idx + 1)
-          }
+      val scalar =
+        if (tag ne null) {
+          val typ =
+            tag.lastIndexOf(':') match {
+              case -1  => parseError(s"unknown tag: $tag")
+              case idx => tag.substring(idx + 1)
+            }
 
-        typ match {
-          case "str" => YAMLString(value)
-          case "int" =>
-            typed match {
-              case n @ (_: YAMLInteger | _: YAMLBigInt) => n
-              case _                                    => parseError(s"not a valid integer: $value")
-            }
-          case "float" =>
-            typed match {
-              case f: YAMLFloat   => f
-              case _: YAMLInteger => YAMLFloat(value.toDouble)
-              case _              => parseError(s"not a valid float: $value")
-            }
-          case "bool" =>
-            typed match {
-              case b: YAMLBoolean => b
-              case _              => parseError(s"not a valid bool: $value")
-            }
-          case "null" =>
-            typed match {
-              case `YAMLNull` => YAMLNull
-              case _          => parseError(s"not a valid bool: $value")
-            }
-          case "timestamp" => parseError("'timestamp' is not yet supported")
-          case _           => parseError(s"unknown type: $typ")
+          typ match {
+            case "str" => YAMLString(value)
+            case "int" =>
+              typed match {
+                case n @ (_: YAMLInteger | _: YAMLBigInt) => n
+                case _                                    => parseError(s"not a valid integer: $value")
+              }
+            case "float" =>
+              typed match {
+                case f: YAMLFloat   => f
+                case _: YAMLInteger => YAMLFloat(value.toDouble)
+                case _              => parseError(s"not a valid float: $value")
+              }
+            case "bool" =>
+              typed match {
+                case b: YAMLBoolean => b
+                case _              => parseError(s"not a valid bool: $value")
+              }
+            case "null" =>
+              typed match {
+                case `YAMLNull` => YAMLNull
+                case _          => parseError(s"not a valid bool: $value")
+              }
+            case "timestamp" => parseError("'timestamp' is not yet supported")
+            case _           => parseError(s"unknown type: $typ")
+          }
+        } else typed
+
+      if (anchor eq null) scalar
+      else
+        aliases get anchor match {
+          case Some(_) => parseError(s"alias '$anchor' already exists")
+          case None =>
+            aliases(anchor) = scalar
+            scalar
         }
-      } else typed
     }
 
     def next: EventType = {
