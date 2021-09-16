@@ -13,16 +13,9 @@ package object libyaml {
   private def bool(a: CInt): Boolean = if (a == 0) false else true
 
   private val FLOAT_REGEX = """[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?""".r
-  val TIMESTAMP           = """
-                            |(?x)[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] # (ymd)
-                            ||[0-9][0-9][0-9][0-9] # (year)
-                            | -[0-9][0-9]? # (month)
-                            | -[0-9][0-9]? # (day)
-                            | ([Tt]|[ \t]+)[0-9][0-9]? # (hour)
-                            | :[0-9][0-9] # (minute)
-                            | :[0-9][0-9] # (second)
-                            | (\.[0-9]*)? # (fraction)
-                            | (([ \t]*)Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?""".stripMargin.r
+  private val INT_REGEX   = """0|[+-]?[1-9][0-9]+""".r
+  val TIMESTAMP =
+    """[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9][0-9]?-[0-9][0-9]?([Tt]|[ \t]+)[0-9][0-9]?:[0-9][0-9]:[0-9][0-9](\.[0-9]*)?(([ \t]*)Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?""".r
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
   object ErrorType {
@@ -283,20 +276,22 @@ package object libyaml {
       val tag   = event.scalar.tag
       val value = event.scalar.value
 
-      def typed: YAMLScalar = {
+      def typed: YAMLScalar =
         value match {
-          case "true"      => YAMLBoolean(true)
-          case "false"     => YAMLBoolean(false)
-          case "null" | "" => YAMLNull
-          case _ if value.drop(if (value.startsWith("-")) 1 else 0).forall(_.isDigit) =>
+          case "true"                         => YAMLBoolean(true)
+          case "false"                        => YAMLBoolean(false)
+          case "null" | ""                    => YAMLNull
+          case ".inf"                         => YAMLFloat(Double.PositiveInfinity)
+          case "-.inf"                        => YAMLFloat(Double.NegativeInfinity)
+          case ".nan"                         => YAMLFloat(Double.NaN)
+          case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
+          case _ if INT_REGEX matches value =>
             BigInt(value) match {
               case n if n.isValidInt => YAMLInteger(n.toInt)
               case n                 => YAMLBigInt(n)
             }
-          case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
-          case _                              => YAMLString(value)
+          case _ => YAMLString(value)
         }
-      }
 
       if (tag ne null) {
         val typ =
@@ -312,12 +307,26 @@ package object libyaml {
               case n @ (_: YAMLInteger | _: YAMLBigInt) => n
               case _                                    => parseError(s"not a valid integer: $value")
             }
+          case "float" =>
+            typed match {
+              case f: YAMLFloat   => f
+              case _: YAMLInteger => YAMLFloat(value.toDouble)
+              case _              => parseError(s"not a valid float: $value")
+            }
+          case "bool" =>
+            typed match {
+              case b: YAMLBoolean => b
+              case _              => parseError(s"not a valid bool: $value")
+            }
+          case "null" =>
+            typed match {
+              case `YAMLNull` => YAMLNull
+              case _          => parseError(s"not a valid bool: $value")
+            }
+          case "timestamp" => parseError("'timestamp' is not yet supported")
+          case _           => parseError(s"unknown type: $typ")
         }
       } else typed
-
-//      event.scalar.plainImplicit
-//      event.scalar.quotedImplicit
-
     }
 
     def next: EventType = {
@@ -360,13 +369,13 @@ package object libyaml {
       case YAMLNull            => null
     }
 
-  implicit def yaml2scala(d: YAMLDocument): Any = yaml2scala(d.doc)
+  implicit def yaml2scala(d: YAMLDocument): Any = yaml2scala(d.document)
 
-  implicit def yaml2scala(s: YAMLStream): List[Any] = s.docs map yaml2scala
+  implicit def yaml2scala(s: YAMLStream): List[Any] = s.documents map yaml2scala
 
   trait YAML
-  case class YAMLStream(docs: List[YAMLDocument])       extends YAML
-  case class YAMLDocument(doc: YAMLValue)               extends YAML
+  case class YAMLStream(documents: List[YAMLDocument])  extends YAML
+  case class YAMLDocument(document: YAMLValue)          extends YAML
   case class YAMLPair(key: YAMLValue, value: YAMLValue) extends YAML
   trait YAMLValue                                       extends YAML { val v: Any }
   trait YAMLScalar                                      extends YAMLValue

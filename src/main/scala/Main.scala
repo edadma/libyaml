@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 import scala.collection.immutable.{ArraySeq, VectorMap}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import pprint._
 
 //object Main extends App {
 //
@@ -44,12 +45,13 @@ import scala.collection.mutable.ListBuffer
 
 object Main extends App {
 
-//  val result: List[Any] =
-//    parseFromString("""
-//        |3.4
-//        |""".stripMargin)
-//
-//  println(result, result.head.getClass)
+  val result /*: List[Any]*/ =
+    parseFromString("""
+        |hr:  65    # Home runs
+        |avg: 0.278 # Batting average
+        |rbi: 147   # Runs Batted In
+        |""".stripMargin)
 
-  println(TIMESTAMP matches "2002-12-14")
+  pprintln(result)
+
 }
