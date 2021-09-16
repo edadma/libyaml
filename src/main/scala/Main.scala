@@ -153,8 +153,54 @@ object Main extends App {
       |: [ 2001-07-02, 2001-08-12,
       |    2001-08-14 ]
       |""".stripMargin
+  val ex12 =
+    """
+      |---
+      |# Products purchased
+      |- item    : Super Hoop
+      |  quantity: 1
+      |- item    : Basketball
+      |  quantity: 4
+      |- item    : Big Shoes
+      |  quantity: 1
+      |""".stripMargin
+  val ex13 =
+    """
+      |# ASCII Art
+      |--- |
+      |  \//||\/||
+      |  // ||  ||__
+      |""".stripMargin
+  val ex14 =
+    """
+      |--- >
+      |  Mark McGwire's
+      |  year was crippled
+      |  by a knee injury.
+      |""".stripMargin
+  val ex15 =
+    """
+      |>
+      | Sammy Sosa completed another
+      | fine season with great stats.
+      |
+      |   63 Home Runs
+      |   0.288 Batting Average
+      |
+      | What a year!
+      |""".stripMargin
+  val ex16 =
+    """
+      |name: Mark McGwire
+      |accomplishment: >
+      |  Mark set a major league
+      |  home run record in 1998.
+      |stats: |
+      |  65 Home Runs
+      |  0.278 Batting Average
+      |""".stripMargin
   val result /*: List[Any]*/ =
-    parseFromString(ex11)
+    parseFromString(ex16)
 
   pprintln(result)
 

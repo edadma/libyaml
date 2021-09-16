@@ -306,15 +306,15 @@ package object libyaml {
           case "null" | ""                    => YAMLNull
           case ".inf"                         => YAMLFloat(Double.PositiveInfinity)
           case "-.inf"                        => YAMLFloat(Double.NegativeInfinity)
-          case ".nan"                         => YAMLFloat(Double.NaN)
+          case ".nan" | ".NaN"                => YAMLFloat(Double.NaN)
           case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
           case _ if INT_REGEX matches value =>
             BigInt(value) match {
               case n if n.isValidInt => YAMLInteger(n.toInt)
               case n                 => YAMLBigInt(n)
             }
-          case _ if TIMESTAMP_REGEX => YAMLTimestamp(value)
-          case _                    => YAMLString(value)
+          case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(value)
+          case _                                  => YAMLString(value)
         }
 
       val scalar =
@@ -353,7 +353,8 @@ package object libyaml {
                 case t: YAMLTimestamp => t
                 case _                => parseError(s"not a valid timestamp: $value")
               }
-            case _ => parseError(s"unknown type: $typ")
+            case "binary" =>
+            case _        => parseError(s"unknown type: $typ")
           }
         } else if (quoted)
           YAMLString(value)
