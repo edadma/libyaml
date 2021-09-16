@@ -45,12 +45,104 @@ import pprint._
 
 object Main extends App {
 
+  val ex1 =
+    """
+      |- Mark McGwire
+      |- Sammy Sosa
+      |- Ken Griffey
+      |""".stripMargin
+  val ex2 =
+    """
+      |hr:  65    # Home runs
+      |avg: 0.278 # Batting average
+      |rbi: 147   # Runs Batted In
+      |""".stripMargin
+  val ex3 =
+    """
+      |american:
+      |  - Boston Red Sox
+      |  - Detroit Tigers
+      |  - New York Yankees
+      |national:
+      |  - New York Mets
+      |  - Chicago Cubs
+      |  - Atlanta Braves
+      |""".stripMargin
+  val ex4 =
+    """
+      |-
+      |  name: Mark McGwire
+      |  hr:   65
+      |  avg:  0.278
+      |-
+      |  name: Sammy Sosa
+      |  hr:   63
+      |  avg:  0.288
+      |""".stripMargin
+  val ex5 =
+    """
+      |- [name        , hr, avg  ]
+      |- [Mark McGwire, 65, 0.278]
+      |- [Sammy Sosa  , 63, 0.288]
+      |""".stripMargin
+  val ex6 =
+    """
+      |Mark McGwire: {hr: 65, avg: 0.278}
+      |Sammy Sosa: {
+      |    hr: 63,
+      |    avg: 0.288
+      |  }
+      |""".stripMargin
+  val ex7 =
+    """
+      |# Ranking of 1998 home runs
+      |---
+      |- Mark McGwire
+      |- Sammy Sosa
+      |- Ken Griffey
+      |
+      |# Team ranking
+      |---
+      |- Chicago Cubs
+      |- St Louis Cardinals
+      |""".stripMargin
+  val ex8 =
+    """
+      |---
+      |time: 20:03:20
+      |player: Sammy Sosa
+      |action: strike (miss)
+      |...
+      |---
+      |time: 20:03:47
+      |player: Sammy Sosa
+      |action: grand slam
+      |...
+      |""".stripMargin
+  val ex9 =
+    """
+      |---
+      |hr: # 1998 hr ranking
+      |  - Mark McGwire
+      |  - Sammy Sosa
+      |rbi:
+      |  # 1998 rbi ranking
+      |  - Sammy Sosa
+      |  - Ken Griffey
+      |""".stripMargin
+  val ex10 =
+    """
+      |---
+      |hr:
+      |  - Mark McGwire
+      |  # Following node labeled SS
+      |  - &SS Sammy Sosa
+      |rbi:
+      |  - *SS # Subsequent occurrence
+      |  - Ken Griffey
+      |""".stripMargin
   val result /*: List[Any]*/ =
-    parseFromString("""
-        |hr:  65    # Home runs
-        |avg: 0.278 # Batting average
-        |rbi: 147   # Runs Batted In
-        |""".stripMargin)
+    parseFromString(ex10)
 
   pprintln(result)
 
