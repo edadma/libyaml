@@ -142,7 +142,7 @@ object Main extends App {
       |  - Ken Griffey
       |""".stripMargin
   val result /*: List[Any]*/ =
-    parseFromString(ex10)
+    parseFromString(ex7)
 
   pprintln(result)
 
