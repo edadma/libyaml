@@ -319,42 +319,41 @@ package object libyaml {
 
       val scalar =
         if (tag ne null) {
-          val typ =
-            tag.lastIndexOf(':') match {
-              case -1  => parseError(s"unknown tag: $tag")
-              case idx => tag.substring(idx + 1)
-            }
-
-          typ match {
-            case "str" => YAMLString(value)
-            case "int" =>
-              typed match {
-                case n @ (_: YAMLInteger | _: YAMLBigInt) => n
-                case _                                    => parseError(s"not a valid integer: $value")
+          tag match {
+            case "tag:yaml.org,2002:binary" =>
+              try {
+                YAMLBinary(java.util.Base64.getDecoder.decode(value.getBytes) to ArraySeq) //todo: charset
+              } catch {
+                case _: IllegalArgumentException => parseError("invalid base 64 string")
               }
-            case "float" =>
+            case "tag:yaml.org,2002:bool" =>
+              typed match {
+                case b: YAMLBoolean => b
+                case _              => parseError(s"not a valid boolean: $value")
+              }
+            case "tag:yaml.org,2002:float" =>
               typed match {
                 case f: YAMLFloat   => f
                 case _: YAMLInteger => YAMLFloat(value.toDouble)
                 case _              => parseError(s"not a valid float: $value")
               }
-            case "bool" =>
+            case "tag:yaml.org,2002:int" =>
               typed match {
-                case b: YAMLBoolean => b
-                case _              => parseError(s"not a valid boolean: $value")
+                case n @ (_: YAMLInteger | _: YAMLBigInt) => n
+                case _                                    => parseError(s"not a valid integer: $value")
               }
-            case "null" =>
+            case "tag:yaml.org,2002:null" =>
               typed match {
                 case `YAMLNull` => YAMLNull
                 case _          => parseError(s"not a valid null: $value")
               }
-            case "timestamp" =>
+            case "tag:yaml.org,2002:str" => YAMLString(value)
+            case "tag:yaml.org,2002:timestamp" =>
               typed match {
                 case t: YAMLTimestamp => t
                 case _                => parseError(s"not a valid timestamp: $value")
               }
-            case "binary" =>
-            case _        => parseError(s"unknown type: $typ")
+            case _ => YAMLLocalScalar(tag, value)
           }
         } else if (quoted)
           YAMLString(value)
@@ -402,12 +401,13 @@ package object libyaml {
       case YAMLSequence(s)     => s map yaml2scala
       case YAMLSet(s)          => s map yaml2scala toSet
       case YAMLMappping(elems) => elems map { case YAMLPair(k, v) => (yaml2scala(k), yaml2scala(v)) } toMap
-      case YAMLOther(tag, v)   => v
       case YAMLString(s)       => s
       case YAMLInteger(n)      => n
       case YAMLBigInt(n)       => n
       case YAMLFloat(n)        => n
       case YAMLNull            => null
+      case YAMLBinary(array)   => array
+      case YAMLLocal(tag, v)   => (tag, v)
     }
 
   implicit def yaml2scala(d: YAMLDocument): Any = yaml2scala(d.document)
@@ -428,12 +428,12 @@ package object libyaml {
   case class YAMLString(v: String)                      extends YAMLScalar
   case object YAMLNull                                  extends YAMLScalar { val v: Any = null }
   case class YAMLTimestamp(v: String)                   extends YAMLScalar
+  case class YAMLLocalScalar(tag: String, v: String)    extends YAMLScalar
   trait YAMLCollection                                  extends YAMLValue
   case class YAMLSequence(v: List[YAMLValue])           extends YAMLCollection
   case class YAMLSet(v: List[YAMLValue])                extends YAMLCollection
   case class YAMLMappping(v: List[YAMLPair])            extends YAMLCollection
   case class YAMLOrderedMapping(v: List[YAMLPair])      extends YAMLCollection
   case class YAMLPairs(v: List[YAMLPair])               extends YAMLCollection
-  case class YAMLOther(tag: String, v: String)          extends YAMLValue
 
 }
