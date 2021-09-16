@@ -127,8 +127,8 @@ package object libyaml {
     def quotedImplicit: Boolean = bool(scalar._7)
   }
 
-  implicit class Alias(val scalar: Ptr[data_alias]) extends AnyVal {
-    def anchor: String = fromCString(scalar._2)
+  implicit class Alias(val alias: Ptr[data_alias]) extends AnyVal {
+    def anchor: String = fromCString(alias._2)
   }
 
   implicit class StreamStart(val enc: Ptr[yaml_encoding_t]) extends AnyVal {
@@ -143,6 +143,8 @@ package object libyaml {
     def getType: EventType = event._1
 
     def scalar: Scalar = Scalar(event.asInstanceOf[Ptr[data_scalar]])
+
+    def alias: Alias = Alias(event.asInstanceOf[Ptr[data_alias]])
 
     def startMark: Mark = Mark(event._3._1.toInt, event._3._2.toInt, event._3._3.toInt)
 
@@ -259,7 +261,14 @@ package object libyaml {
       else
         parseError(s"unknown value event type: ${event.getType.value}")
 
-    def parseAlias: YAMLValue = {}
+    def parseAlias: YAMLValue = {
+      val anchor = event.alias.anchor
+
+      aliases get anchor match {
+        case Some(value) => value
+        case None        => parseError(s"unknown alias: '$anchor'")
+      }
+    }
 
     def parseSequence: YAMLSequence = {
       val buf = new ListBuffer[YAMLValue]
@@ -341,13 +350,12 @@ package object libyaml {
         } else typed
 
       if (anchor eq null) scalar
-      else
-        aliases get anchor match {
-          case Some(_) => parseError(s"alias '$anchor' already exists")
-          case None =>
-            aliases(anchor) = scalar
-            scalar
-        }
+      else if (aliases contains anchor)
+        parseError(s"alias '$anchor' already exists")
+      else {
+        aliases(anchor) = scalar
+        scalar
+      }
     }
 
     def next: EventType = {
