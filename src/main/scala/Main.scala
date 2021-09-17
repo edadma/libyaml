@@ -215,8 +215,8 @@ object Main extends App {
       | above may be different for
       | different documents.
       |""".stripMargin
-  val result /*: List[Any]*/ =
-    parseFromString(ex16)
+  val result =
+    parseFromString(ex2)
 
   pprintln(result)
 
