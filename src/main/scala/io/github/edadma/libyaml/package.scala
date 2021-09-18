@@ -277,42 +277,42 @@ package object libyaml {
     parse(parser)
   }
 
-  def readFromString(s: String): List[Any] = {
+  def constructFromString(s: String): List[Any] = {
     val parser = new Parser
 
     parser.setInputString(s)
-    read(parser)
+    construct(parser)
   }
 
-  def readFromFile(file: String): List[Any] = {
+  def constructFromFile(file: String): List[Any] = {
     val parser = new Parser
 
     parser.setInputFile(file)
-    read(parser)
+    construct(parser)
   }
 
-  def transform(s: YAMLStream): List[Any] = s.documents map transform
+  def construct(s: YAMLStream): List[Any] = s.documents map construct
 
-  def transform(d: YAMLDocument): Any = transform(d.document)
+  def construct(d: YAMLDocument): Any = construct(d.document)
 
-  def transform(v: YAMLValue): Any =
+  def construct(v: YAMLValue): Any =
     v match {
-      case YAMLSequence(s)                        => s map transform
-      case YAMLMapping(elems)                     => elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } toMap
-      case YAMLOrderedMapping(elems)              => elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } to VectorMap
-      case YAMLString(s)                          => s
-      case YAMLInteger(n)                         => n
-      case YAMLBigInt(n)                          => n
-      case YAMLFloat(n)                           => n
-      case YAMLDecimal(n)                         => n
-      case YAMLNull                               => null
-      case YAMLBinary(data)                       => data
-      case YAMLBoolean(bool)                      => bool
-      case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
-      case _                                      => problem(s"don't know how to transform '$v'", null) // todo: handle remaining cases; all values should carry a mark
+      case YAMLSequence(s)           => s map construct
+      case YAMLMapping(elems)        => elems map { case YAMLPair(k, v) => (construct(k), construct(v)) } toMap
+      case YAMLOrderedMapping(elems) => elems map { case YAMLPair(k, v) => (construct(k), construct(v)) } to VectorMap
+      case YAMLString(s)             => s
+      case YAMLInteger(n)            => n
+      case YAMLBigInt(n)             => n
+      case YAMLFloat(n)              => n
+      case YAMLDecimal(n)            => n
+      case YAMLNull                  => null
+      case YAMLBinary(data)          => data
+      case YAMLBoolean(bool)         => bool
+//      case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
+      case _ => problem(s"don't know how to construct '$v'", null) // todo: handle remaining cases; all values should carry a mark
     }
 
-  def read(parser: Parser): List[Any] = transform(parse(parser))
+  def construct(parser: Parser): List[Any] = construct(parse(parser))
 
   def parse(parser: Parser): YAMLStream = {
     val event   = new Event
