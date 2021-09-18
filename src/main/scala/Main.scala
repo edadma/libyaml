@@ -323,7 +323,7 @@ import pprint._
 
 object Main extends App {
 
-  val ex26 =
+  val example_26 =
     """
         |# Ordered maps are represented as
         |# A sequence of mappings, with
@@ -334,7 +334,7 @@ object Main extends App {
         |- Ken Griffy: 58
         |""".stripMargin
 
-  pprintln(parseFromString(ex26))
-  pprintln(constructFromString(ex26))
+  pprintln(parseFromString(example_26))
+  pprintln(constructFromString(example_26))
 
 }
