@@ -16,10 +16,15 @@ package object libyaml {
 
   private def bool(a: CInt): Boolean = if (a == 0) false else true
 
-  private val FLOAT_REGEX = """[+-]?[0-9]*\.[0-9]+([eE][+-]?[0-9]+)?""".r
-  private val INT_REGEX   = """0|[+-]?[1-9][0-9]+""".r
+  private val FLOAT_REGEX = """[+-]?(?:[0-9_]*\.[0-9_]+|[0-9][0-9_]*\.)(?:[eE][+-]?[0-9]+)?""".r
+  private val INT2_REGEX  = """([-+]?)0b([0-1_]+)""".r
+  private val INT8_REGEX  = """([-+]?)0o?([0-7_]+)""".r
+  private val INT10_REGEX = """([-+]?(?:0|[1-9][0-9_]*))""".r
+  private val INT16_REGEX = """([-+]?)0x([0-9a-fA-F_]+)""".r
+  private val INT60_REGEX = """([-+]?[1-9][0-9_]*(:[0-5]?[0-9])+)""".r
+
   val TIMESTAMP_REGEX: Regex =
-    """[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9][0-9]?-[0-9][0-9]?([Tt]|[ \t]+)[0-9][0-9]?:[0-9][0-9]:[0-9][0-9](\.[0-9]*)?(([ \t]*)Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?""".r
+    """[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9][0-9]?-[0-9][0-9]?(?:[Tt]|[ \t]+)[0-9][0-9]?:[0-9][0-9]:[0-9][0-9](?:\.[0-9]*)?(?:(?:[ \t]*)Z|[-+][0-9][0-9]?(?::[0-9][0-9])?)?""".r
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
 
@@ -312,15 +317,31 @@ package object libyaml {
       case "true"                         => YAMLBoolean(true)
       case "false"                        => YAMLBoolean(false)
       case "null" | ""                    => YAMLNull
-      case ".inf"                         => YAMLFloat(Double.PositiveInfinity)
-      case "-.inf"                        => YAMLFloat(Double.NegativeInfinity)
-      case ".nan" | ".NaN"                => YAMLFloat(Double.NaN)
+      case ".inf" | ".Inf" | ".INF"       => YAMLFloat(Double.PositiveInfinity)
+      case "-.inf" | "-.Inf" | "-.INF"    => YAMLFloat(Double.NegativeInfinity)
+      case ".nan" | ".NaN" | ".NAN"       => YAMLFloat(Double.NaN)
       case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
-      case _ if INT_REGEX matches value =>
-        BigInt(value) match {
+      case INT2_REGEX(s, n2) =>
+        BigInt(s"$s${n2.replace("_", "")}", 2) match {
           case n if n.isValidInt => YAMLInteger(n.toInt)
           case n                 => YAMLBigInt(n)
         }
+      case INT8_REGEX(s, n8) =>
+        BigInt(s"$s${n8.replace("_", "")}", 8) match {
+          case n if n.isValidInt => YAMLInteger(n.toInt)
+          case n                 => YAMLBigInt(n)
+        }
+      case INT10_REGEX(_) =>
+        BigInt(value.replace("_", "")) match {
+          case n if n.isValidInt => YAMLInteger(n.toInt)
+          case n                 => YAMLBigInt(n)
+        }
+      case INT16_REGEX(s, n16) =>
+        BigInt(s"$s${n16.replace("_", "")}", 16) match {
+          case n if n.isValidInt => YAMLInteger(n.toInt)
+          case n                 => YAMLBigInt(n)
+        }
+      // todo: base 60
       case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(Datetime.fromString(value))
       case _                                  => YAMLString(value)
     }

@@ -199,6 +199,23 @@ object Main extends App {
       |  65 Home Runs
       |  0.278 Batting Average
       |""".stripMargin
+  val ex17 = util.Using(scala.io.Source.fromFile("ex17.yaml"))(_.mkString).get
+  val ex18 =
+    """
+      |plain:
+      |  This unquoted scalar
+      |  spans many lines.
+      |
+      |quoted: "So does this
+      |  quoted scalar.\n"
+      |""".stripMargin
+  val ex19 =
+    """
+      |canonical: 12345
+      |decimal: +12345
+      |octal: 0o14
+      |hexadecimal: 0xC
+      |""".stripMargin
   val ex23 =
     """
       |---
@@ -216,7 +233,7 @@ object Main extends App {
       | different documents.
       |""".stripMargin
   val result =
-    parseFromString(ex23)
+    parseFromString(ex19)
 
   pprintln(result)
 
