@@ -253,8 +253,18 @@ object Main extends App {
       | above may be different for
       | different documents.
       |""".stripMargin
+  val ex25 =
+    """
+      |# Sets are represented as a
+      |# Mapping where each key is
+      |# associated with a null value
+      |--- !!set
+      |? Mark McGwire
+      |? Sammy Sosa
+      |? Ken Griff
+      |""".stripMargin
   val result =
-    parseFromString(ex22)
+    parseFromString(ex25)
 
   pprintln(result)
 

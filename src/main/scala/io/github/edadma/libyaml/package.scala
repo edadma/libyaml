@@ -397,17 +397,19 @@ package object libyaml {
     }
 
     def parseSequence: YAMLSequence = {
-      val seq = event.sequenceStart
-      val buf = new ListBuffer[YAMLValue]
+      val sequenceStart = event.sequenceStart
+      val tag           = sequenceStart.tag
+      val buf           = new ListBuffer[YAMLValue]
 
       while (next != EventType.SEQUENCE_END) buf += parseValue
 
-      YAMLSequence(seq.tag, buf.toList)
+      YAMLSequence(tag, buf.toList)
     }
 
     def parseMapping: YAMLMappping = {
-      val map = event.mappingStart
-      val buf = new ListBuffer[YAMLPair]
+      val mappingStart = event.mappingStart
+      val tag          = mappingStart.tag
+      val buf          = new ListBuffer[YAMLPair]
 
       while (next != EventType.MAPPING_END) {
         val key = parseValue
@@ -416,7 +418,7 @@ package object libyaml {
         buf.append(YAMLPair(key, parseValue))
       }
 
-      YAMLMappping(map.tag, buf.toList)
+      YAMLMappping(tag, buf.toList)
     }
 
     def parseScalar: YAMLScalar = {
