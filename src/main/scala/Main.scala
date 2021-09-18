@@ -4,19 +4,19 @@
 //
 //object Main extends App {
 //
-//  val ex1 =
+//  val example_1 =
 //    """
 //      |- Mark McGwire
 //      |- Sammy Sosa
 //      |- Ken Griffey
 //      |""".stripMargin
-//  val ex2 =
+//  val example_2 =
 //    """
 //      |hr:  65    # Home runs
 //      |avg: 0.278 # Batting average
 //      |rbi: 147   # Runs Batted In
 //      |""".stripMargin
-//  val ex3 =
+//  val example_3 =
 //    """
 //      |american:
 //      |  - Boston Red Sox
@@ -27,7 +27,7 @@
 //      |  - Chicago Cubs
 //      |  - Atlanta Braves
 //      |""".stripMargin
-//  val ex4 =
+//  val example_4 =
 //    """
 //      |-
 //      |  name: Mark McGwire
@@ -38,13 +38,13 @@
 //      |  hr:   63
 //      |  avg:  0.288
 //      |""".stripMargin
-//  val ex5 =
+//  val example_5 =
 //    """
 //      |- [name        , hr, avg  ]
 //      |- [Mark McGwire, 65, 0.278]
 //      |- [Sammy Sosa  , 63, 0.288]
 //      |""".stripMargin
-//  val ex6 =
+//  val example_6 =
 //    """
 //      |Mark McGwire: {hr: 65, avg: 0.278}
 //      |Sammy Sosa: {
@@ -52,7 +52,7 @@
 //      |    avg: 0.288
 //      |  }
 //      |""".stripMargin
-//  val ex7 =
+//  val example_7 =
 //    """
 //      |# Ranking of 1998 home runs
 //      |---
@@ -65,7 +65,7 @@
 //      |- Chicago Cubs
 //      |- St Louis Cardinals
 //      |""".stripMargin
-//  val ex8 =
+//  val example_8 =
 //    """
 //      |---
 //      |time: 20:03:20
@@ -78,7 +78,7 @@
 //      |action: grand slam
 //      |...
 //      |""".stripMargin
-//  val ex9 =
+//  val example_9 =
 //    """
 //      |---
 //      |hr: # 1998 hr ranking
@@ -89,7 +89,7 @@
 //      |  - Sammy Sosa
 //      |  - Ken Griffey
 //      |""".stripMargin
-//  val ex10 =
+//  val example_10 =
 //    """
 //      |---
 //      |hr:
@@ -100,7 +100,7 @@
 //      |  - *SS # Subsequent occurrence
 //      |  - Ken Griffey
 //      |""".stripMargin
-//  val ex11 =
+//  val example_11 =
 //    """
 //      |? - Detroit Tigers
 //      |  - Chicago cubs
@@ -112,7 +112,7 @@
 //      |: [ 2001-07-02, 2001-08-12,
 //      |    2001-08-14 ]
 //      |""".stripMargin
-//  val ex12 =
+//  val example_12 =
 //    """
 //      |---
 //      |# Products purchased
@@ -123,21 +123,21 @@
 //      |- item    : Big Shoes
 //      |  quantity: 1
 //      |""".stripMargin
-//  val ex13 =
+//  val example_13 =
 //    """
 //      |# ASCII Art
 //      |--- |
 //      |  \//||\/||
 //      |  // ||  ||__
 //      |""".stripMargin
-//  val ex14 =
+//  val example_14 =
 //    """
 //      |--- >
 //      |  Mark McGwire's
 //      |  year was crippled
 //      |  by a knee injury.
 //      |""".stripMargin
-//  val ex15 =
+//  val example_15 =
 //    """
 //      |>
 //      | Sammy Sosa completed another
@@ -148,7 +148,7 @@
 //      |
 //      | What a year!
 //      |""".stripMargin
-//  val ex16 =
+//  val example_16 =
 //    """
 //      |name: Mark McGwire
 //      |accomplishment: >
@@ -158,8 +158,8 @@
 //      |  65 Home Runs
 //      |  0.278 Batting Average
 //      |""".stripMargin
-//  val ex17 = util.Using(scala.io.Source.fromFile("ex17.yaml"))(_.mkString).get
-//  val ex18 =
+//  val example_17 = util.Using(scala.io.Source.fromFile("ex17.yaml"))(_.mkString).get
+//  val example_18 =
 //    """
 //      |plain:
 //      |  This unquoted scalar
@@ -168,14 +168,14 @@
 //      |quoted: "So does this
 //      |  quoted scalar.\n"
 //      |""".stripMargin
-//  val ex19 =
+//  val example_19 =
 //    """
 //      |canonical: 12345
 //      |decimal: +12345
 //      |octal: 0o14
 //      |hexadecimal: 0xC
 //      |""".stripMargin
-//  val ex20 =
+//  val example_20 =
 //    """
 //      |canonical: 1.23015e+3
 //      |exponential: 12.3015e+02
@@ -183,20 +183,20 @@
 //      |negative infinity: -.inf
 //      |not a number: .NaN
 //      |""".stripMargin
-//  val ex21 =
+//  val example_21 =
 //    """
 //      |null:
 //      |booleans: [ true, false ]
 //      |string: '012345'
 //      |""".stripMargin
-//  val ex22 =
+//  val example_22 =
 //    """
 //      |canonical: 2001-12-15T02:59:43.1Z
 //      |iso8601: 2001-12-14t21:59:43.10-05:00
 //      |spaced: 2001-12-14 21:59:43.10 -5
 //      |date: 2002-12-14
 //      |""".stripMargin
-//  val ex23 =
+//  val example_23 =
 //    """
 //      |---
 //      |not-date: !!str 2002-04-28
@@ -212,7 +212,7 @@
 //      | above may be different for
 //      | different documents.
 //      |""".stripMargin
-//  val ex24 =
+//  val example_24 =
 //    """
 //      |%TAG ! tag:clarkevans.com,2002:
 //      |--- !shape
@@ -229,7 +229,7 @@
 //      |  color: 0xFFEEBB
 //      |  text: Pretty vector drawing.
 //      |""".stripMargin
-//  val ex25 =
+//  val example_25 =
 //    """
 //      |# Sets are represented as a
 //      |# Mapping where each key is
@@ -239,7 +239,7 @@
 //      |? Sammy Sosa
 //      |? Ken Griff
 //      |""".stripMargin
-//  val ex26 =
+//  val example_26 =
 //    """
 //      |# Ordered maps are represented as
 //      |# A sequence of mappings, with
@@ -249,7 +249,7 @@
 //      |- Sammy Sosa: 63
 //      |- Ken Griffy: 58
 //      |""".stripMargin
-//  val ex27 =
+//  val example_27 =
 //    """
 //      |--- !<tag:clarkevans.com,2002:invoice>
 //      |invoice: 34843
@@ -281,7 +281,7 @@
 //      |    Backup contact is Nancy
 //      |    Billsmer @ 338-4338.
 //      |""".stripMargin
-//  val ex28 =
+//  val example_28 =
 //    """
 //      |---
 //      |Time: 2001-11-23 15:01:42 -5
@@ -317,24 +317,52 @@
 //
 //}
 
-import io.github.edadma.libyaml._
+//import io.github.edadma.libyaml._
+//
+//import pprint._
+//
+//object Main extends App {
+//
+//  val example_24 =
+//    """
+//      |%TAG ! tag:clarkevans.com,2002:
+//      |--- !shape
+//      |  # Use the ! handle for presenting
+//      |  # tag:clarkevans.com,2002:circle
+//      |- !circle
+//      |  center: &ORIGIN {x: 73, y: 129}
+//      |  radius: 7
+//      |- !line
+//      |  start: *ORIGIN
+//      |  finish: { x: 89, y: 102 }
+//      |- !label
+//      |  start: *ORIGIN
+//      |  color: 0xFFEEBB
+//      |  text: Pretty vector drawing.
+//      |""".stripMargin
+//
+//  pprintln(parseFromString(example_24))
+//
+//}
 
-import pprint._
-
-object Main extends App {
-
-  val example_26 =
-    """
-        |# Ordered maps are represented as
-        |# A sequence of mappings, with
-        |# each mapping having one key
-        |--- !!omap
-        |- Mark McGwire: 65
-        |- Sammy Sosa: 63
-        |- Ken Griffy: 58
-        |""".stripMargin
-
-  pprintln(parseFromString(example_26))
-  pprintln(constructFromString(example_26))
-
-}
+//import io.github.edadma.libyaml._
+//
+//import pprint._
+//
+//object Main extends App {
+//
+//  val example_26 =
+//    """
+//        |# Ordered maps are represented as
+//        |# A sequence of mappings, with
+//        |# each mapping having one key
+//        |--- !!omap
+//        |- Mark McGwire: 65
+//        |- Sammy Sosa: 63
+//        |- Ken Griffy: 58
+//        |""".stripMargin
+//
+//  pprintln(parseFromString(example_26))
+//  pprintln(constructFromString(example_26))
+//
+//}
