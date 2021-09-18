@@ -304,6 +304,7 @@ package object libyaml {
       case YAMLInteger(n)                         => n
       case YAMLBigInt(n)                          => n
       case YAMLFloat(n)                           => n
+      case YAMLDecimal(n)                         => n
       case YAMLNull                               => null
       case YAMLBinary(data)                       => data
       case YAMLBoolean(bool)                      => bool
@@ -316,6 +317,16 @@ package object libyaml {
   def parse(parser: Parser): YAMLStream = {
     val event   = new Event
     val aliases = new mutable.HashMap[String, YAMLValue]
+
+    def addAlias(anchor: String, value: YAMLValue): YAMLValue = {
+      if (anchor eq null) value
+      else if (aliases contains anchor)
+        parseError(s"alias '$anchor' already exists")
+      else {
+        aliases(anchor) = value
+        value
+      }
+    }
 
     def parseStream: YAMLStream = {
       val buf = new ListBuffer[YAMLDocument]
@@ -360,39 +371,44 @@ package object libyaml {
       }
     }
 
-    def parseSequence: YAMLCollection = {
+    def parseSequence: YAMLValue = {
       val sequenceStart = event.sequenceStart
       val tag           = sequenceStart.tag
+      val anchor        = sequenceStart.anchor
       val mark          = event.startMark
       val buf           = new ListBuffer[YAMLValue]
 
       while (next != EventType.SEQUENCE_END) buf += parseValue
 
-      tag match {
-        case "tag:yaml.org,2002:seq" | null => YAMLSequence(buf.toList)
-        case "tag:yaml.org,2002:omap" =>
-          if (buf exists {
-                case YAMLMapping(pairs) => pairs.length != 1
-                case _                  => true
-              })
-            problem("invalid omap", mark)
+      val sequence =
+        tag match {
+          case "tag:yaml.org,2002:seq" | null => YAMLSequence(buf.toList)
+          case "tag:yaml.org,2002:omap" =>
+            if (buf exists {
+                  case YAMLMapping(pairs) => pairs.length != 1
+                  case _                  => true
+                })
+              problem("invalid omap", mark)
 
-          YAMLOrderedMapping(buf map { case YAMLMapping(pairs) => pairs.head } toList)
-        case "tag:yaml.org,2002:pairs" =>
-          if (buf exists {
-                case YAMLMapping(pairs) => pairs.length != 1
-                case _                  => true
-              })
-            problem("invalid pairs", mark)
+            YAMLOrderedMapping(buf map { case YAMLMapping(pairs) => pairs.head } toList)
+          case "tag:yaml.org,2002:pairs" =>
+            if (buf exists {
+                  case YAMLMapping(pairs) => pairs.length != 1
+                  case _                  => true
+                })
+              problem("invalid pairs", mark)
 
-          YAMLPairs(buf map { case YAMLMapping(pairs) => pairs.head } toList)
-        case _ => YAMLTaggedSequence(tag, buf.toList)
-      }
+            YAMLPairs(buf map { case YAMLMapping(pairs) => pairs.head } toList)
+          case _ => YAMLTaggedSequence(tag, buf.toList)
+        }
+
+      addAlias(anchor, sequence)
     }
 
-    def parseMapping: YAMLCollection = {
+    def parseMapping: YAMLValue = {
       val mappingStart = event.mappingStart
       val tag          = mappingStart.tag
+      val anchor       = mappingStart.anchor
       val mark         = event.startMark
       val buf          = new ListBuffer[YAMLPair]
 
@@ -403,18 +419,21 @@ package object libyaml {
         buf.append(YAMLPair(key, parseValue))
       }
 
-      tag match {
-        case "tag:yaml.org,2002:map" | null => YAMLMapping(buf.toList)
-        case "tag:yaml.org,2002:set" =>
-          if (buf exists { case YAMLPair(_, value) => value != YAMLNull })
-            problem("invalid set", mark)
+      val mapping =
+        tag match {
+          case "tag:yaml.org,2002:map" | null => YAMLMapping(buf.toList)
+          case "tag:yaml.org,2002:set" =>
+            if (buf exists { case YAMLPair(_, value) => value != YAMLNull })
+              problem("invalid set", mark)
 
-          YAMLSet(buf map { case YAMLPair(key, _) => key } toList)
-        case _ => YAMLTaggedMapping(tag, buf.toList)
-      }
+            YAMLSet(buf map { case YAMLPair(key, _) => key } toList)
+          case _ => YAMLTaggedMapping(tag, buf.toList)
+        }
+
+      addAlias(anchor, mapping)
     }
 
-    def parseScalar: YAMLScalar = {
+    def parseScalar: YAMLValue = {
       val anchor = event.scalar.anchor
       val tag    = event.scalar.tag
       val quoted = event.scalar.quotedImplicit
@@ -429,7 +448,7 @@ package object libyaml {
           case ".inf" | ".Inf" | ".INF"       => YAMLFloat(Double.PositiveInfinity)
           case "-.inf" | "-.Inf" | "-.INF"    => YAMLFloat(Double.NegativeInfinity)
           case ".nan" | ".NaN" | ".NAN"       => YAMLFloat(Double.NaN)
-          case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
+          case _ if FLOAT_REGEX matches value => YAMLDecimal(BigDecimal(value))
           case INT2_REGEX(s, n2) =>
             BigInt(s"$s${n2.replace("_", "")}", 2) match {
               case n if n.isValidInt => YAMLInteger(n.toInt)
@@ -472,6 +491,7 @@ package object libyaml {
           case "tag:yaml.org,2002:float" =>
             typed(value) match {
               case f: YAMLFloat   => f
+              case d: YAMLDecimal => YAMLFloat(d.v.toDouble)
               case _: YAMLInteger => YAMLFloat(value.toDouble)
               case _              => problem(s"not a valid float: $value", mark)
             }
@@ -493,13 +513,7 @@ package object libyaml {
           case _ => YAMLTaggedScalar(tag, quoted, value, event.startMark)
         }
 
-      if (anchor eq null) scalar
-      else if (aliases contains anchor)
-        parseError(s"alias '$anchor' already exists")
-      else {
-        aliases(anchor) = scalar
-        scalar
-      }
+      addAlias(anchor, scalar)
     }
 
     def next: EventType = {
@@ -574,6 +588,10 @@ package object libyaml {
   }
 
   case class YAMLFloat(v: Double) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:float"
+  }
+
+  case class YAMLDecimal(v: BigDecimal) extends YAMLScalar {
     val tag: String = "tag:yaml.org,2002:float"
   }
 
