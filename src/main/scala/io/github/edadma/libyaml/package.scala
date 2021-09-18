@@ -363,13 +363,29 @@ package object libyaml {
     def parseSequence: YAMLCollection = {
       val sequenceStart = event.sequenceStart
       val tag           = sequenceStart.tag
+      val mark          = event.startMark
       val buf           = new ListBuffer[YAMLValue]
 
       while (next != EventType.SEQUENCE_END) buf += parseValue
 
       tag match {
         case "tag:yaml.org,2002:seq" | null => YAMLSequence(buf.toList)
-        // todo pairs
+        case "tag:yaml.org,2002:omap" =>
+          if (buf exists {
+                case YAMLMapping(pairs) => pairs.length != 1
+                case _                  => true
+              })
+            problem("invalid omap", mark)
+
+          YAMLOrderedMapping(buf map { case YAMLMapping(pairs) => pairs.head } toList)
+        case "tag:yaml.org,2002:pairs" =>
+          if (buf exists {
+                case YAMLMapping(pairs) => pairs.length != 1
+                case _                  => true
+              })
+            problem("invalid pairs", mark)
+
+          YAMLPairs(buf map { case YAMLMapping(pairs) => pairs.head } toList)
         case _ => YAMLTaggedSequence(tag, buf.toList)
       }
     }
@@ -389,7 +405,6 @@ package object libyaml {
 
       tag match {
         case "tag:yaml.org,2002:map" | null => YAMLMapping(buf.toList)
-        case "tag:yaml.org,2002:omap"       => YAMLOrderedMapping(buf.toList)
         case "tag:yaml.org,2002:set" =>
           if (buf exists { case YAMLPair(_, value) => value != YAMLNull })
             problem("invalid set", mark)
@@ -583,9 +598,11 @@ package object libyaml {
 
   case class YAMLTaggedSequence(tag: String, elems: List[YAMLValue]) extends YAMLCollection
 
-  case class YAMLMapping(map: List[YAMLPair]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:map" }
+  case class YAMLMapping(pairs: List[YAMLPair]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:map" }
 
   case class YAMLOrderedMapping(pairs: List[YAMLPair]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:omap" }
+
+  case class YAMLPairs(pairs: List[YAMLPair]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:pairs" }
 
   case class YAMLTaggedMapping(tag: String, pairs: List[YAMLPair]) extends YAMLCollection
 

@@ -263,8 +263,18 @@ object Main extends App {
       |? Sammy Sosa
       |? Ken Griff
       |""".stripMargin
+  val ex26 =
+    """
+      |# Ordered maps are represented as
+      |# A sequence of mappings, with
+      |# each mapping having one key
+      |--- !!omap
+      |- Mark McGwire: 65
+      |- Sammy Sosa: 63
+      |- Ken Griffy: 58
+      |""".stripMargin
   val result =
-    parseFromString(ex25)
+    parseFromString(ex26)
 
   pprintln(result)
 
