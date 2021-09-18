@@ -297,11 +297,9 @@ package object libyaml {
 
   def transform(v: YAMLValue): Any =
     v match {
-      case YAMLSequence("tag:yaml.org,2002:seq" | null, s) => s map transform
-      case YAMLMappping("tag:yaml.org,2002:map" | null, elems) =>
-        elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } toMap
-      case YAMLMappping("tag:yaml.org,2002:omap", elems) =>
-        elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } to VectorMap
+      case YAMLSequence(s)                        => s map transform
+      case YAMLMapping(elems)                     => elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } toMap
+      case YAMLOrderedMapping(elems)              => elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } to VectorMap
       case YAMLString(s)                          => s
       case YAMLInteger(n)                         => n
       case YAMLBigInt(n)                          => n
@@ -311,40 +309,6 @@ package object libyaml {
       case YAMLBoolean(bool)                      => bool
       case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
       case _                                      => problem(s"don't know how to transform '$v'", null) // todo: handle remaining cases; all values should carry a mark
-    }
-
-  def typed(value: String): YAMLScalar =
-    value match {
-      case "true"                         => YAMLBoolean(true)
-      case "false"                        => YAMLBoolean(false)
-      case "null" | ""                    => YAMLNull
-      case ".inf" | ".Inf" | ".INF"       => YAMLFloat(Double.PositiveInfinity)
-      case "-.inf" | "-.Inf" | "-.INF"    => YAMLFloat(Double.NegativeInfinity)
-      case ".nan" | ".NaN" | ".NAN"       => YAMLFloat(Double.NaN)
-      case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
-      case INT2_REGEX(s, n2) =>
-        BigInt(s"$s${n2.replace("_", "")}", 2) match {
-          case n if n.isValidInt => YAMLInteger(n.toInt)
-          case n                 => YAMLBigInt(n)
-        }
-      case INT8_REGEX(s, n8) =>
-        BigInt(s"$s${n8.replace("_", "")}", 8) match {
-          case n if n.isValidInt => YAMLInteger(n.toInt)
-          case n                 => YAMLBigInt(n)
-        }
-      case INT10_REGEX(_) =>
-        BigInt(value.replace("_", "")) match {
-          case n if n.isValidInt => YAMLInteger(n.toInt)
-          case n                 => YAMLBigInt(n)
-        }
-      case INT16_REGEX(s, n16) =>
-        BigInt(s"$s${n16.replace("_", "")}", 16) match {
-          case n if n.isValidInt => YAMLInteger(n.toInt)
-          case n                 => YAMLBigInt(n)
-        }
-      // todo: base 60
-      case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(Datetime.fromString(value))
-      case _                                  => YAMLString(value)
     }
 
   def read(parser: Parser): List[Any] = transform(parse(parser))
@@ -396,19 +360,24 @@ package object libyaml {
       }
     }
 
-    def parseSequence: YAMLSequence = {
+    def parseSequence: YAMLCollection = {
       val sequenceStart = event.sequenceStart
       val tag           = sequenceStart.tag
       val buf           = new ListBuffer[YAMLValue]
 
       while (next != EventType.SEQUENCE_END) buf += parseValue
 
-      YAMLSequence(tag, buf.toList)
+      tag match {
+        case "tag:yaml.org,2002:seq" | null => YAMLSequence(buf.toList)
+        // todo pairs
+        case _ => YAMLTaggedSequence(tag, buf.toList)
+      }
     }
 
-    def parseMapping: YAMLMappping = {
+    def parseMapping: YAMLCollection = {
       val mappingStart = event.mappingStart
       val tag          = mappingStart.tag
+      val mark         = event.startMark
       val buf          = new ListBuffer[YAMLPair]
 
       while (next != EventType.MAPPING_END) {
@@ -418,7 +387,16 @@ package object libyaml {
         buf.append(YAMLPair(key, parseValue))
       }
 
-      YAMLMappping(tag, buf.toList)
+      tag match {
+        case "tag:yaml.org,2002:map" | null => YAMLMapping(buf.toList)
+        case "tag:yaml.org,2002:omap"       => YAMLOrderedMapping(buf.toList)
+        case "tag:yaml.org,2002:set" =>
+          if (buf exists { case YAMLPair(_, value) => value != YAMLNull })
+            problem("invalid set", mark)
+
+          YAMLSet(buf map { case YAMLPair(key, _) => key } toList)
+        case _ => YAMLTaggedMapping(tag, buf.toList)
+      }
     }
 
     def parseScalar: YAMLScalar = {
@@ -427,6 +405,40 @@ package object libyaml {
       val quoted = event.scalar.quotedImplicit
       val value  = event.scalar.value
       val mark   = event.startMark
+
+      def typed(value: String): YAMLScalar =
+        value match {
+          case "true"                         => YAMLBoolean(true)
+          case "false"                        => YAMLBoolean(false)
+          case "null" | ""                    => YAMLNull
+          case ".inf" | ".Inf" | ".INF"       => YAMLFloat(Double.PositiveInfinity)
+          case "-.inf" | "-.Inf" | "-.INF"    => YAMLFloat(Double.NegativeInfinity)
+          case ".nan" | ".NaN" | ".NAN"       => YAMLFloat(Double.NaN)
+          case _ if FLOAT_REGEX matches value => YAMLFloat(value.toDouble)
+          case INT2_REGEX(s, n2) =>
+            BigInt(s"$s${n2.replace("_", "")}", 2) match {
+              case n if n.isValidInt => YAMLInteger(n.toInt)
+              case n                 => YAMLBigInt(n)
+            }
+          case INT8_REGEX(s, n8) =>
+            BigInt(s"$s${n8.replace("_", "")}", 8) match {
+              case n if n.isValidInt => YAMLInteger(n.toInt)
+              case n                 => YAMLBigInt(n)
+            }
+          case INT10_REGEX(_) =>
+            BigInt(value.replace("_", "")) match {
+              case n if n.isValidInt => YAMLInteger(n.toInt)
+              case n                 => YAMLBigInt(n)
+            }
+          case INT16_REGEX(s, n16) =>
+            BigInt(s"$s${n16.replace("_", "")}", 16) match {
+              case n if n.isValidInt => YAMLInteger(n.toInt)
+              case n                 => YAMLBigInt(n)
+            }
+          // todo: base 60
+          case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(Datetime.fromString(value))
+          case _                                  => YAMLString(value)
+        }
 
       val scalar =
         tag match {
@@ -565,8 +577,16 @@ package object libyaml {
 
   trait YAMLCollection extends YAMLValue
 
-  case class YAMLSequence(tag: String, elems: List[YAMLValue]) extends YAMLCollection
+  case class YAMLSequence(elems: List[YAMLValue]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:seq" }
 
-  case class YAMLMappping(tag: String, pairs: List[YAMLPair]) extends YAMLCollection
+  case class YAMLSet(elems: List[YAMLValue]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:set" }
+
+  case class YAMLTaggedSequence(tag: String, elems: List[YAMLValue]) extends YAMLCollection
+
+  case class YAMLMapping(map: List[YAMLPair]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:map" }
+
+  case class YAMLOrderedMapping(pairs: List[YAMLPair]) extends YAMLCollection { val tag: String = "tag:yaml.org,2002:omap" }
+
+  case class YAMLTaggedMapping(tag: String, pairs: List[YAMLPair]) extends YAMLCollection
 
 }
