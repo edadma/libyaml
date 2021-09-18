@@ -83,6 +83,7 @@ object LibYAML {
   def yaml_parser_initialize(parser: yaml_parser_tp): Int                                     = extern //1319
   def yaml_parser_delete(parser: yaml_parser_tp): Unit                                        = extern //1328
   def yaml_parser_set_input_string(parser: yaml_parser_tp, input: CString, size: CSize): Unit = extern //1343
+  def yaml_parser_set_input_file(parser: yaml_parser_tp, file: Ptr[FILE]): Unit               = extern //1357
   def yaml_parser_set_encoding(parser: yaml_parser_tp, encoding: yaml_encoding_t): Unit       = extern //1380
   def yaml_parser_scan(parser: yaml_parser_tp, token: yaml_token_t): CInt                     = extern //1404
   def yaml_parser_parse(parser: yaml_parser_tp, event: yaml_event_tp): CInt                   = extern //1428

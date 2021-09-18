@@ -5,6 +5,7 @@ import io.github.edadma.libyaml.extern.LibYAML._
 import scala.collection.immutable.ArraySeq
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.scalanative.libc.stdio
 import scala.scalanative.unsafe._
 import scala.scalanative.libc.stdlib._
 import scala.scalanative.unsigned._
@@ -232,6 +233,15 @@ package object libyaml {
     def setInputString(input: String): Unit =
       yaml_parser_set_input_string(parser, toCString(input)(inputZone), input.length.toUInt)
 
+    def setInputFile(file: String): Unit = Zone { implicit z =>
+      val fd = stdio.fopen(toCString(file), c"r")
+
+      if (fd eq null)
+        sys.error(s"error opening file '$file'")
+
+      yaml_parser_set_input_file(parser, fd)
+    }
+
     def parse(event: Event): Boolean = yaml_parser_parse(parser, event.event) == 0 // todo: handle errors better
 
     def destroy(): Unit = {
@@ -248,22 +258,43 @@ package object libyaml {
     parse(parser)
   }
 
-  def transformStream(s: YAMLStream): List[Any] = s.documents map transformDocument
+  def parseFromFile(file: String): YAMLStream = {
+    val parser = new Parser
 
-  def transformDocument(d: YAMLDocument): Any = transformValue(d.document)
+    parser.setInputFile(file)
+    parse(parser)
+  }
 
-  def transformValue(v: YAMLValue): Any =
+  def readFromString(s: String): List[Any] = {
+    val parser = new Parser
+
+    parser.setInputString(s)
+    read(parser)
+  }
+
+  def readFromFile(file: String): List[Any] = {
+    val parser = new Parser
+
+    parser.setInputFile(file)
+    read(parser)
+  }
+
+  def transform(s: YAMLStream): List[Any] = s.documents map transform
+
+  def transform(d: YAMLDocument): Any = transform(d.document)
+
+  def transform(v: YAMLValue): Any =
     v match {
       case YAMLScalar(null, quoted, value, _) =>
         if (quoted) value
         else
           typed(value)
       case YAMLSequence(null, elems) =>
-      case "tag:yaml.org,2002:binary" =>
+      case YAMLScalar("tag:yaml.org,2002:binary", _, value, mark) =>
         try {
-          java.util.Base64.getDecoder.decode(v.value.getBytes) to ArraySeq //todo: charset
+          java.util.Base64.getDecoder.decode(value.getBytes) to ArraySeq //todo: charset
         } catch {
-          case _: IllegalArgumentException => problem("invalid base 64 string", v.mark)
+          case _: IllegalArgumentException => problem("invalid base 64 string", mark)
         }
       case "tag:yaml.org,2002:bool" =>
         typed(v.value) match {
@@ -326,7 +357,7 @@ package object libyaml {
       case _                                  => YAMLString(value)
     }
 
-  def parseAndTransform(parser: Parser): List[Any] = transformStream(parse(parser))
+  def read(parser: Parser): List[Any] = transform(parse(parser))
 
   def parse(parser: Parser): YAMLStream = {
     val event   = new Event
