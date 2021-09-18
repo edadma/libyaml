@@ -285,45 +285,46 @@ package object libyaml {
 
   def transform(v: YAMLValue): Any =
     v match {
-      case YAMLScalar(null, quoted, value, _) =>
+      case YAMLTaggedScalar(null, quoted, value, _) =>
         if (quoted) value
         else
           typed(value)
       case YAMLSequence(null, elems) =>
-      case YAMLScalar("tag:yaml.org,2002:binary", _, value, mark) =>
+      case YAMLTaggedScalar("tag:yaml.org,2002:binary", _, value, mark) =>
         try {
           java.util.Base64.getDecoder.decode(value.getBytes) to ArraySeq //todo: charset
         } catch {
           case _: IllegalArgumentException => problem("invalid base 64 string", mark)
         }
-      case "tag:yaml.org,2002:bool" =>
-        typed(v.value) match {
+      case YAMLTaggedScalar("tag:yaml.org,2002:bool", _, value, mark) =>
+        typed(value) match {
           case b: YAMLBoolean => b.v
-          case _              => problem(s"not a valid boolean: ${v.value}", v.mark)
+          case _              => problem(s"not a valid boolean: $value", mark)
         }
-      case "tag:yaml.org,2002:float" =>
-        typed(v.value) match {
+      case YAMLTaggedScalar("tag:yaml.org,2002:float", _, value, mark) =>
+        typed(value) match {
           case f: YAMLFloat   => f.v
-          case _: YAMLInteger => v.value.toDouble
-          case _              => problem(s"not a valid float: ${v.value}", v.mark)
+          case _: YAMLInteger => value.toDouble
+          case _              => problem(s"not a valid float: $value", mark)
         }
-      case "tag:yaml.org,2002:int" =>
-        typed(v.value) match {
+      case YAMLTaggedScalar("tag:yaml.org,2002:int", _, value, mark) =>
+        typed(value) match {
           case n @ (_: YAMLInteger | _: YAMLBigInt) => n
-          case _                                    => problem(s"not a valid integer: ${v.value}", v.mark)
+          case _                                    => problem(s"not a valid integer: $value", mark)
         }
-      case "tag:yaml.org,2002:null" =>
-        typed(v.value) match {
+      case YAMLTaggedScalar("tag:yaml.org,2002:null", _, value, mark) =>
+        typed(value) match {
           case `YAMLNull` => YAMLNull
-          case _          => problem(s"not a valid null: ${v.value}", v.mark)
+          case _          => problem(s"not a valid null: $value", mark)
         }
-      case "tag:yaml.org,2002:str" => v.value
-      case "tag:yaml.org,2002:timestamp" =>
-        typed(v.value) match {
+      case YAMLTaggedScalar("tag:yaml.org,2002:str", _, value, mark) => value
+      case YAMLTaggedScalar("tag:yaml.org,2002:timestamp", _, value, mark) =>
+        typed(value) match {
           case t: YAMLTimestamp => t
-          case _                => problem(s"not a valid timestamp: ${v.value}", v.mark)
+          case _                => problem(s"not a valid timestamp: $value", mark)
         }
-      case _ => YAMLLocalScalar(tag, value)
+      case YAMLTaggedScalar(tag, _, value, mark) => value // todo: application specific tags
+      case YAMLSequence
     }
 
   //    v match {
@@ -339,7 +340,7 @@ package object libyaml {
 //      case YAMLLocal(tag, v)   => (tag, v)
 //    }
 
-  def typed(value: String): YAMLTypedScalar =
+  def typed(value: String): YAMLScalar =
     value match {
       case "true"                         => YAMLBoolean(true)
       case "false"                        => YAMLBoolean(false)
@@ -429,9 +430,13 @@ package object libyaml {
       YAMLMappping(map.tag, buf.toList)
     }
 
-    def parseScalar: YAMLScalar = {
+    def parseScalar: YAMLTaggedScalar = {
       val anchor = event.scalar.anchor
-      val scalar = YAMLScalar(event.scalar.tag, event.scalar.quotedImplicit, event.scalar.value, event.startMark)
+      val tag = event.scalar.tag
+      val quoted = event.scalar.quotedImplicit
+
+      val scalar =
+        if (tag ne null)YAMLScalar(, , event.scalar.value, event.startMark)
 
       if (anchor eq null) scalar
       else if (aliases contains anchor)
@@ -481,16 +486,17 @@ package object libyaml {
   case class YAMLDocument(document: YAMLValue)                                   extends YAML
   case class YAMLPair(key: YAMLValue, value: YAMLValue)                          extends YAML
   trait YAMLValue                                                                extends YAML { val tag: String }
-  case class YAMLScalar(tag: String, quoted: Boolean, value: String, mark: Mark) extends YAMLValue
+  trait YAMLScalar                                                          extends YAML { val v: Any }
+  case class YAMLTaggedScalar(tag: String, quoted: Boolean, v: String, mark: Mark) extends YAMLScalar
   trait YAMLTypedScalar                                                          extends YAML { val v: Any }
-  case class YAMLBoolean(v: Boolean)                                             extends YAMLTypedScalar
-  case class YAMLBinary(v: ArraySeq[Byte])                                       extends YAMLTypedScalar
-  case class YAMLInteger(v: Int)                                                 extends YAMLTypedScalar
-  case class YAMLBigInt(v: BigInt)                                               extends YAMLTypedScalar
-  case class YAMLFloat(v: Double)                                                extends YAMLTypedScalar
-  case class YAMLString(v: String)                                               extends YAMLTypedScalar
-  case object YAMLNull                                                           extends YAMLTypedScalar { val v: Any = null }
-  case class YAMLTimestamp(v: String)                                            extends YAMLTypedScalar
+  case class YAMLBoolean(v: Boolean)                                             extends YAMLScalar
+  case class YAMLBinary(v: ArraySeq[Byte])                                       extends YAMLScalar
+  case class YAMLInteger(v: Int)                                                 extends YAMLScalar
+  case class YAMLBigInt(v: BigInt)                                               extends YAMLScalar
+  case class YAMLFloat(v: Double)                                                extends YAMLScalar
+  case class YAMLString(v: String)                                               extends YAMLScalar
+  case object YAMLNull                                                           extends YAMLScalar { val v: Any = null }
+  case class YAMLTimestamp(v: String)                                            extends YAMLScalar
   trait YAMLCollection                                                           extends YAMLValue
   case class YAMLSequence(tag: String, elems: List[YAMLValue])                   extends YAMLCollection
   case class YAMLMappping(tag: String, pairs: List[YAMLPair])                    extends YAMLCollection
