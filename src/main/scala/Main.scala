@@ -230,6 +230,13 @@ object Main extends App {
       |booleans: [ true, false ]
       |string: '012345'
       |""".stripMargin
+  val ex22 =
+    """
+      |canonical: 2001-12-15T02:59:43.1Z
+      |iso8601: 2001-12-14t21:59:43.10-05:00
+      |spaced: 2001-12-14 21:59:43.10 -5
+      |date: 2002-12-14
+      |""".stripMargin
   val ex23 =
     """
       |---
@@ -247,7 +254,7 @@ object Main extends App {
       | different documents.
       |""".stripMargin
   val result =
-    parseFromString(ex21)
+    parseFromString(ex22)
 
   pprintln(result)
 
