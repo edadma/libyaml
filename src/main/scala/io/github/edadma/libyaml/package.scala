@@ -3,7 +3,7 @@ package io.github.edadma
 import io.github.edadma.datetime.Datetime
 import io.github.edadma.libyaml.extern.LibYAML._
 
-import scala.collection.immutable.ArraySeq
+import scala.collection.immutable.{ArraySeq, VectorMap}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.scalanative.libc.stdio
@@ -170,18 +170,12 @@ package object libyaml {
                               style: yaml_scalar_style_t): Int =
       yaml_scalar_event_initialize(event, anchor, tag, value, length, plain_implicit, quoted_implicit, style)
 
-    def sequenceStartEventInitialize(anchor: Ptr[yaml_char_t],
-                                     tag: Ptr[yaml_char_t],
-                                     _implicit: Int,
-                                     style: SequenceStyle): Int =
+    def sequenceStartEventInitialize(anchor: Ptr[yaml_char_t], tag: Ptr[yaml_char_t], _implicit: Int, style: SequenceStyle): Int =
       yaml_sequence_start_event_initialize(event, anchor, tag, _implicit, style.value)
 
     def sequenceEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_sequence_end_event_initialize(event)
 
-    def mappingStartEventInitialize(anchor: Ptr[yaml_char_t],
-                                    tag: Ptr[yaml_char_t],
-                                    _implicit: Int,
-                                    style: MappingStyle): Int =
+    def mappingStartEventInitialize(anchor: Ptr[yaml_char_t], tag: Ptr[yaml_char_t], _implicit: Int, style: MappingStyle): Int =
       yaml_mapping_start_event_initialize(event, anchor, tag, _implicit, style.value)
 
     def mappingEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_mapping_end_event_initialize(event)
@@ -302,60 +296,20 @@ package object libyaml {
 
   def transform(v: YAMLValue): Any =
     v match {
-      case YAMLTaggedScalar(null, quoted, value, _) =>
-        if (quoted) value
-        else
-          typed(value)
-      case YAMLSequence(null, elems) =>
-      case YAMLTaggedScalar("tag:yaml.org,2002:binary", _, value, mark) =>
-        try {
-          java.util.Base64.getDecoder.decode(value.getBytes) to ArraySeq //todo: charset
-        } catch {
-          case _: IllegalArgumentException => problem("invalid base 64 string", mark)
-        }
-      case YAMLTaggedScalar("tag:yaml.org,2002:bool", _, value, mark) =>
-        typed(value) match {
-          case b: YAMLBoolean => b.v
-          case _              => problem(s"not a valid boolean: $value", mark)
-        }
-      case YAMLTaggedScalar("tag:yaml.org,2002:float", _, value, mark) =>
-        typed(value) match {
-          case f: YAMLFloat   => f.v
-          case _: YAMLInteger => value.toDouble
-          case _              => problem(s"not a valid float: $value", mark)
-        }
-      case YAMLTaggedScalar("tag:yaml.org,2002:int", _, value, mark) =>
-        typed(value) match {
-          case n @ (_: YAMLInteger | _: YAMLBigInt) => n
-          case _                                    => problem(s"not a valid integer: $value", mark)
-        }
-      case YAMLTaggedScalar("tag:yaml.org,2002:null", _, value, mark) =>
-        typed(value) match {
-          case `YAMLNull` => YAMLNull
-          case _          => problem(s"not a valid null: $value", mark)
-        }
-      case YAMLTaggedScalar("tag:yaml.org,2002:str", _, value, mark) => value
-      case YAMLTaggedScalar("tag:yaml.org,2002:timestamp", _, value, mark) =>
-        typed(value) match {
-          case t: YAMLTimestamp => t
-          case _                => problem(s"not a valid timestamp: $value", mark)
-        }
-      case YAMLTaggedScalar(tag, _, value, mark) => value // todo: application specific tags
-      //     case YAMLSequence
+      case YAMLSequence("tag:yaml.org,2002:seq" | null, s) => s map transform
+      case YAMLMappping("tag:yaml.org,2002:map" | null, elems) =>
+        elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } toMap
+      case YAMLMappping("tag:yaml.org,2002:omap", elems) =>
+        elems map { case YAMLPair(k, v) => (transform(k), transform(v)) } to VectorMap
+      case YAMLString(s)                          => s
+      case YAMLInteger(n)                         => n
+      case YAMLBigInt(n)                          => n
+      case YAMLFloat(n)                           => n
+      case YAMLNull                               => null
+      case YAMLBinary(array)                      => array
+      case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
+      case _                                      => problem(s"don't know how to transform '$v'", null) // todo: handle remaining cases; all values should carry a mark
     }
-
-  //    v match {
-  //      case YAMLSequence(s)     => s map yaml2scala
-  //      case YAMLSet(s)          => s map yaml2scala toSet
-  //      case YAMLMappping(elems) => elems map { case YAMLPair(k, v) => (yaml2scala(k), yaml2scala(v)) } toMap
-  //      case YAMLString(s)       => s
-  //      case YAMLInteger(n)      => n
-  //      case YAMLBigInt(n)       => n
-  //      case YAMLFloat(n)        => n
-  //      case YAMLNull            => null
-  //      case YAMLBinary(array)   => array
-  //      case YAMLLocal(tag, v)   => (tag, v)
-  //    }
 
   def typed(value: String): YAMLScalar =
     value match {
@@ -452,12 +406,45 @@ package object libyaml {
       val tag    = event.scalar.tag
       val quoted = event.scalar.quotedImplicit
       val value  = event.scalar.value
+      val mark   = event.startMark
 
       val scalar =
-        if (tag ne null)
-          if (quoted) YAMLString(value) else typed(value)
-        else
-          YAMLTaggedScalar(tag, quoted, value, event.startMark)
+        tag match {
+          case null => if (quoted) YAMLString(value) else typed(value)
+          case "tag:yaml.org,2002:binary" =>
+            try {
+              YAMLBinary(java.util.Base64.getDecoder.decode(value.getBytes) to ArraySeq) //todo: charset
+            } catch {
+              case _: IllegalArgumentException => problem("invalid base 64 string", mark)
+            }
+          case "tag:yaml.org,2002:bool" =>
+            typed(value) match {
+              case b: YAMLBoolean => b
+              case _              => problem(s"not a valid boolean: $value", mark)
+            }
+          case "tag:yaml.org,2002:float" =>
+            typed(value) match {
+              case f: YAMLFloat   => f
+              case _: YAMLInteger => YAMLFloat(value.toDouble)
+              case _              => problem(s"not a valid float: $value", mark)
+            }
+          case "tag:yaml.org,2002:int" =>
+            typed(value) match {
+              case n @ (_: YAMLInteger | _: YAMLBigInt) => n
+              case _                                    => problem(s"not a valid integer: $value", mark)
+            }
+          case "tag:yaml.org,2002:null" =>
+            typed(value) match {
+              case `YAMLNull` => YAMLNull
+              case _          => problem(s"not a valid null: $value", mark)
+            }
+          case "tag:yaml.org,2002:timestamp" =>
+            typed(value) match {
+              case t: YAMLTimestamp => t
+              case _                => problem(s"not a valid timestamp: $value", mark)
+            }
+          case _ => YAMLTaggedScalar(tag, quoted, value, event.startMark)
+        }
 
       if (anchor eq null) scalar
       else if (aliases contains anchor)
@@ -497,7 +484,11 @@ package object libyaml {
   }
 
   def problem(msg: String, mark: Mark): Nothing = {
-    Console.err.println(s"Error ${mark.line}:${mark.column}: $msg")
+    if (mark eq null)
+      Console.err.println(s"Error: $msg")
+    else
+      Console.err.println(s"Error ${mark.line}:${mark.column}: $msg")
+
     sys.exit(1)
   }
 
@@ -509,29 +500,48 @@ package object libyaml {
 
   case class YAMLPair(key: YAMLValue, value: YAMLValue) extends YAML
 
-  trait YAMLValue  extends YAML      { val tag: String }
-  trait YAMLScalar extends YAMLValue { val v: Any      }
+  trait YAMLValue extends YAML {
+    val tag: String
+  }
+
+  trait YAMLScalar extends YAMLValue {
+    val v: Any
+  }
 
   case class YAMLTaggedScalar(tag: String, quoted: Boolean, v: String, mark: Mark) extends YAMLScalar
 
-  case class YAMLBoolean(v: Boolean) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:bool" }
+  case class YAMLBoolean(v: Boolean) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:bool"
+  }
 
-  case class YAMLBinary(v: ArraySeq[Byte]) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:binary" }
+  case class YAMLBinary(v: ArraySeq[Byte]) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:binary"
+  }
 
-  case class YAMLInteger(v: Int) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:int" }
+  case class YAMLInteger(v: Int) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:int"
+  }
 
-  case class YAMLBigInt(v: BigInt) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:int" }
+  case class YAMLBigInt(v: BigInt) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:int"
+  }
 
-  case class YAMLFloat(v: Double) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:float" }
+  case class YAMLFloat(v: Double) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:float"
+  }
 
-  case class YAMLString(v: String) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:str" }
+  case class YAMLString(v: String) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:str"
+  }
 
   case object YAMLNull extends YAMLScalar {
     val tag: String = "tag:yaml.org,2002:bool"
     val v: Any      = null
   }
 
-  case class YAMLTimestamp(v: Datetime) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:timestamp" }
+  case class YAMLTimestamp(v: Datetime) extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:timestamp"
+  }
 
   trait YAMLCollection extends YAMLValue
 
