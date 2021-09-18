@@ -228,10 +228,6 @@ package object libyaml {
     def mappingStyle: MappingStyle = MappingStyle(mappingStart._5)
   }
 
-  //  implicit class StreamStart(val enc: Ptr[yaml_encoding_t]) extends AnyVal {
-  //    def encoding: Encoding = !enc
-  //  }
-
   class Parser {
     private[libyaml] val parser: yaml_parser_tp = malloc(sizeof[yaml_parser_t]).asInstanceOf[yaml_parser_tp]
     private lazy val inputZone                  = Zone.open()
