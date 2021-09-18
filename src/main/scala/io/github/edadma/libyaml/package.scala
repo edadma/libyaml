@@ -137,9 +137,9 @@ package object libyaml {
 
     def mappingStart: MappingStart = MappingStart(event.asInstanceOf[Ptr[data_mapping_start]])
 
-    def startMark: Mark = Mark(event._3._1.toInt, event._3._2.toInt, event._3._3.toInt)
+    def startMark: Mark = Mark(event._3._1.toInt, event._3._2.toInt + 1, event._3._3.toInt + 1)
 
-    def endMark: Mark = Mark(event._4._1.toInt, event._4._2.toInt, event._4._3.toInt)
+    def endMark: Mark = Mark(event._4._1.toInt, event._4._2.toInt + 1, event._4._3.toInt + 1)
 
     def streamStartEventInitialize(encoding: yaml_encoding_t): Int =
       yaml_stream_start_event_initialize(event, encoding)
@@ -302,7 +302,7 @@ package object libyaml {
       case YAMLBigInt(n)                          => n
       case YAMLFloat(n)                           => n
       case YAMLNull                               => null
-      case YAMLBinary(array)                      => array
+      case YAMLBinary(data)                       => data
       case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
       case _                                      => problem(s"don't know how to transform '$v'", null) // todo: handle remaining cases; all values should carry a mark
     }
@@ -409,9 +409,9 @@ package object libyaml {
           case null => if (quoted) YAMLString(value) else typed(value)
           case "tag:yaml.org,2002:binary" =>
             try {
-              YAMLBinary(java.util.Base64.getDecoder.decode(value.getBytes) to ArraySeq) //todo: charset
+              YAMLBinary(new Binary(java.util.Base64.getDecoder.decode(value.replaceAll("\\s", "").getBytes))) //todo: charset
             } catch {
-              case _: IllegalArgumentException => problem("invalid base 64 string", mark)
+              case _: IllegalArgumentException => problem(s"invalid base 64 string: $value", mark)
             }
           case "tag:yaml.org,2002:bool" =>
             typed(value) match {
@@ -510,7 +510,7 @@ package object libyaml {
     val tag: String = "tag:yaml.org,2002:bool"
   }
 
-  case class YAMLBinary(v: ArraySeq[Byte]) extends YAMLScalar {
+  case class YAMLBinary(v: Binary) extends YAMLScalar {
     val tag: String = "tag:yaml.org,2002:binary"
   }
 

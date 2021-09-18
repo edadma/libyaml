@@ -216,7 +216,7 @@ object Main extends App {
       | different documents.
       |""".stripMargin
   val result =
-    parseFromString(ex2)
+    parseFromString(ex23)
 
   pprintln(result)
 
