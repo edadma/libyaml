@@ -308,6 +308,7 @@ package object libyaml {
       case YAMLFloat(n)                           => n
       case YAMLNull                               => null
       case YAMLBinary(data)                       => data
+      case YAMLBoolean(bool)                      => bool
       case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
       case _                                      => problem(s"don't know how to transform '$v'", null) // todo: handle remaining cases; all values should carry a mark
     }

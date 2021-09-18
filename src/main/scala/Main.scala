@@ -216,6 +216,20 @@ object Main extends App {
       |octal: 0o14
       |hexadecimal: 0xC
       |""".stripMargin
+  val ex20 =
+    """
+      |canonical: 1.23015e+3
+      |exponential: 12.3015e+02
+      |fixed: 1230.15
+      |negative infinity: -.inf
+      |not a number: .NaN
+      |""".stripMargin
+  val ex21 =
+    """
+      |null:
+      |booleans: [ true, false ]
+      |string: '012345'
+      |""".stripMargin
   val ex23 =
     """
       |---
@@ -233,7 +247,7 @@ object Main extends App {
       | different documents.
       |""".stripMargin
   val result =
-    parseFromString(ex19)
+    parseFromString(ex21)
 
   pprintln(result)
 
