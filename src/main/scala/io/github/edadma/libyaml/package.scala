@@ -1,5 +1,6 @@
 package io.github.edadma
 
+import io.github.edadma.datetime.Datetime
 import io.github.edadma.libyaml.extern.LibYAML._
 
 import scala.collection.immutable.ArraySeq
@@ -21,6 +22,7 @@ package object libyaml {
     """[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9][0-9]?-[0-9][0-9]?([Tt]|[ \t]+)[0-9][0-9]?:[0-9][0-9]:[0-9][0-9](\.[0-9]*)?(([ \t]*)Z|[-+][0-9][0-9]?(:[0-9][0-9])?)?""".r
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
+
   object ErrorType {
     final val NO_ERROR       = new ErrorType(0)
     final val MEMORY_ERROR   = new ErrorType(1)
@@ -33,6 +35,7 @@ package object libyaml {
   }
 
   implicit class TokenType(val value: yaml_token_type_t) extends AnyVal
+
   object TokenType {
     final val NO_TOKEN             = new TokenType(0)
     final val STREAM_START         = new TokenType(1)
@@ -59,6 +62,7 @@ package object libyaml {
   }
 
   implicit class EventType(val value: event_type_t) extends AnyVal
+
   object EventType {
     final val NO_EVENT       = new EventType(0)
     final val STREAM_START   = new EventType(1)
@@ -74,6 +78,7 @@ package object libyaml {
   }
 
   implicit class ScalarStyle(val value: yaml_scalar_style_t) extends AnyVal
+
   object ScalarStyle {
     final val ANY           = new ScalarStyle(0)
     final val PLAIN         = new ScalarStyle(1)
@@ -84,6 +89,7 @@ package object libyaml {
   }
 
   implicit class Encoding(val value: CInt) extends AnyVal
+
   object Encoding {
     final val ANY     = new Encoding(0)
     final val UTF8    = new Encoding(1)
@@ -92,6 +98,7 @@ package object libyaml {
   }
 
   implicit class Break(val value: yaml_break_t) extends AnyVal
+
   object Break {
     final val ANY  = new Break(0)
     final val CR   = new Break(1)
@@ -100,6 +107,7 @@ package object libyaml {
   }
 
   implicit class SequenceStyle(val value: yaml_sequence_style_t) extends AnyVal
+
   object SequenceStyle {
     final val ANY_SEQUENCE   = new SequenceStyle(0)
     final val BLOCK_SEQUENCE = new SequenceStyle(1)
@@ -107,6 +115,7 @@ package object libyaml {
   }
 
   implicit class MappingStyle(val value: yaml_mapping_style_t) extends AnyVal
+
   object MappingStyle {
     final val ANY_MAPPING   = new MappingStyle(0)
     final val BLOCK_MAPPING = new MappingStyle(1)
@@ -134,20 +143,24 @@ package object libyaml {
 
     def streamStartEventInitialize(encoding: yaml_encoding_t): Int =
       yaml_stream_start_event_initialize(event, encoding)
+
     def streamEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_stream_end_event_initialize(event)
-//    def documentStartEventInitialize(version_directive: Ptr[yaml_version_directive_t],
-//                                     tag_directives_start: Ptr[yaml_tag_directive_t],
-//                                     tag_directives_end: Ptr[yaml_tag_directive_t],
-//                                     _implicit: Int): Int =
-//      yaml_document_start_event_initialize(event,
-//                                           version_directive,
-//                                           tag_directives_start,
-//                                           tag_directives_end,
-//                                           _implicit)
+
+    //    def documentStartEventInitialize(version_directive: Ptr[yaml_version_directive_t],
+    //                                     tag_directives_start: Ptr[yaml_tag_directive_t],
+    //                                     tag_directives_end: Ptr[yaml_tag_directive_t],
+    //                                     _implicit: Int): Int =
+    //      yaml_document_start_event_initialize(event,
+    //                                           version_directive,
+    //                                           tag_directives_start,
+    //                                           tag_directives_end,
+    //                                           _implicit)
     def documentEndEventInitialize(_implicit: Int): Int =
       yaml_document_end_event_initialize(event, _implicit)
+
     def aliasEventInitialize(anchor: Ptr[yaml_char_t]): Int =
       yaml_alias_event_initialize(event, anchor)
+
     def scalarEventInitialize(anchor: Ptr[yaml_char_t],
                               tag: Ptr[yaml_char_t],
                               value: Ptr[yaml_char_t],
@@ -156,17 +169,21 @@ package object libyaml {
                               quoted_implicit: Int,
                               style: yaml_scalar_style_t): Int =
       yaml_scalar_event_initialize(event, anchor, tag, value, length, plain_implicit, quoted_implicit, style)
+
     def sequenceStartEventInitialize(anchor: Ptr[yaml_char_t],
                                      tag: Ptr[yaml_char_t],
                                      _implicit: Int,
                                      style: SequenceStyle): Int =
       yaml_sequence_start_event_initialize(event, anchor, tag, _implicit, style.value)
+
     def sequenceEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_sequence_end_event_initialize(event)
+
     def mappingStartEventInitialize(anchor: Ptr[yaml_char_t],
                                     tag: Ptr[yaml_char_t],
                                     _implicit: Int,
                                     style: MappingStyle): Int =
       yaml_mapping_start_event_initialize(event, anchor, tag, _implicit, style.value)
+
     def mappingEndEventInitialize(event: Ptr[yaml_event_t]): Int = yaml_mapping_end_event_initialize(event)
 
     def delete(): Unit = yaml_event_delete(event)
@@ -324,21 +341,21 @@ package object libyaml {
           case _                => problem(s"not a valid timestamp: $value", mark)
         }
       case YAMLTaggedScalar(tag, _, value, mark) => value // todo: application specific tags
-      case YAMLSequence
+      //     case YAMLSequence
     }
 
   //    v match {
-//      case YAMLSequence(s)     => s map yaml2scala
-//      case YAMLSet(s)          => s map yaml2scala toSet
-//      case YAMLMappping(elems) => elems map { case YAMLPair(k, v) => (yaml2scala(k), yaml2scala(v)) } toMap
-//      case YAMLString(s)       => s
-//      case YAMLInteger(n)      => n
-//      case YAMLBigInt(n)       => n
-//      case YAMLFloat(n)        => n
-//      case YAMLNull            => null
-//      case YAMLBinary(array)   => array
-//      case YAMLLocal(tag, v)   => (tag, v)
-//    }
+  //      case YAMLSequence(s)     => s map yaml2scala
+  //      case YAMLSet(s)          => s map yaml2scala toSet
+  //      case YAMLMappping(elems) => elems map { case YAMLPair(k, v) => (yaml2scala(k), yaml2scala(v)) } toMap
+  //      case YAMLString(s)       => s
+  //      case YAMLInteger(n)      => n
+  //      case YAMLBigInt(n)       => n
+  //      case YAMLFloat(n)        => n
+  //      case YAMLNull            => null
+  //      case YAMLBinary(array)   => array
+  //      case YAMLLocal(tag, v)   => (tag, v)
+  //    }
 
   def typed(value: String): YAMLScalar =
     value match {
@@ -354,7 +371,7 @@ package object libyaml {
           case n if n.isValidInt => YAMLInteger(n.toInt)
           case n                 => YAMLBigInt(n)
         }
-      case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(value)
+      case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(Datetime.fromString(value))
       case _                                  => YAMLString(value)
     }
 
@@ -430,13 +447,17 @@ package object libyaml {
       YAMLMappping(map.tag, buf.toList)
     }
 
-    def parseScalar: YAMLTaggedScalar = {
+    def parseScalar: YAMLScalar = {
       val anchor = event.scalar.anchor
-      val tag = event.scalar.tag
+      val tag    = event.scalar.tag
       val quoted = event.scalar.quotedImplicit
+      val value  = event.scalar.value
 
       val scalar =
-        if (tag ne null)YAMLScalar(, , event.scalar.value, event.startMark)
+        if (tag ne null)
+          if (quoted) YAMLString(value) else typed(value)
+        else
+          YAMLTaggedScalar(tag, quoted, value, event.startMark)
 
       if (anchor eq null) scalar
       else if (aliases contains anchor)
@@ -478,27 +499,44 @@ package object libyaml {
   def problem(msg: String, mark: Mark): Nothing = {
     Console.err.println(s"Error ${mark.line}:${mark.column}: $msg")
     sys.exit(1)
-
   }
 
   trait YAML
-  case class YAMLStream(documents: List[YAMLDocument])                           extends YAML
-  case class YAMLDocument(document: YAMLValue)                                   extends YAML
-  case class YAMLPair(key: YAMLValue, value: YAMLValue)                          extends YAML
-  trait YAMLValue                                                                extends YAML { val tag: String }
-  trait YAMLScalar                                                          extends YAML { val v: Any }
+
+  case class YAMLStream(documents: List[YAMLDocument]) extends YAML
+
+  case class YAMLDocument(document: YAMLValue) extends YAML
+
+  case class YAMLPair(key: YAMLValue, value: YAMLValue) extends YAML
+
+  trait YAMLValue  extends YAML      { val tag: String }
+  trait YAMLScalar extends YAMLValue { val v: Any      }
+
   case class YAMLTaggedScalar(tag: String, quoted: Boolean, v: String, mark: Mark) extends YAMLScalar
-  trait YAMLTypedScalar                                                          extends YAML { val v: Any }
-  case class YAMLBoolean(v: Boolean)                                             extends YAMLScalar
-  case class YAMLBinary(v: ArraySeq[Byte])                                       extends YAMLScalar
-  case class YAMLInteger(v: Int)                                                 extends YAMLScalar
-  case class YAMLBigInt(v: BigInt)                                               extends YAMLScalar
-  case class YAMLFloat(v: Double)                                                extends YAMLScalar
-  case class YAMLString(v: String)                                               extends YAMLScalar
-  case object YAMLNull                                                           extends YAMLScalar { val v: Any = null }
-  case class YAMLTimestamp(v: String)                                            extends YAMLScalar
-  trait YAMLCollection                                                           extends YAMLValue
-  case class YAMLSequence(tag: String, elems: List[YAMLValue])                   extends YAMLCollection
-  case class YAMLMappping(tag: String, pairs: List[YAMLPair])                    extends YAMLCollection
+
+  case class YAMLBoolean(v: Boolean) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:bool" }
+
+  case class YAMLBinary(v: ArraySeq[Byte]) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:binary" }
+
+  case class YAMLInteger(v: Int) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:int" }
+
+  case class YAMLBigInt(v: BigInt) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:int" }
+
+  case class YAMLFloat(v: Double) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:float" }
+
+  case class YAMLString(v: String) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:str" }
+
+  case object YAMLNull extends YAMLScalar {
+    val tag: String = "tag:yaml.org,2002:bool"
+    val v: Any      = null
+  }
+
+  case class YAMLTimestamp(v: Datetime) extends YAMLScalar { val tag: String = "tag:yaml.org,2002:timestamp" }
+
+  trait YAMLCollection extends YAMLValue
+
+  case class YAMLSequence(tag: String, elems: List[YAMLValue]) extends YAMLCollection
+
+  case class YAMLMappping(tag: String, pairs: List[YAMLPair]) extends YAMLCollection
 
 }
