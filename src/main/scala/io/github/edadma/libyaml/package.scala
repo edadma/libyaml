@@ -14,6 +14,8 @@ import scala.util.matching.Regex
 
 package object libyaml {
 
+  val defaultConstructor = new Constructor
+
   private def bool(a: CInt): Boolean = if (a == 0) false else true
 
   private val FLOAT_REGEX = """[+-]?(?:[0-9_]*\.[0-9_]+|[0-9][0-9_]*\.)(?:[eE][+-]?[0-9]+)?""".r
@@ -281,38 +283,15 @@ package object libyaml {
     val parser = new Parser
 
     parser.setInputString(s)
-    construct(parser)
+    defaultConstructor.construct(parse(parser))
   }
 
   def constructFromFile(file: String): List[Any] = {
     val parser = new Parser
 
     parser.setInputFile(file)
-    construct(parser)
+    defaultConstructor.construct(parse(parser))
   }
-
-  def construct(s: YAMLStream): List[Any] = s.documents map construct
-
-  def construct(d: YAMLDocument): Any = construct(d.document)
-
-  def construct(v: YAMLValue): Any =
-    v match {
-      case YAMLSequence(s)           => s map construct
-      case YAMLMapping(elems)        => elems map { case YAMLPair(k, v) => (construct(k), construct(v)) } toMap
-      case YAMLOrderedMapping(elems) => elems map { case YAMLPair(k, v) => (construct(k), construct(v)) } to VectorMap
-      case YAMLString(s)             => s
-      case YAMLInteger(n)            => n
-      case YAMLBigInt(n)             => n
-      case YAMLFloat(n)              => n
-      case YAMLDecimal(n)            => n
-      case YAMLNull                  => null
-      case YAMLBinary(data)          => data
-      case YAMLBoolean(bool)         => bool
-//      case YAMLTaggedScalar(tag, quoted, v, mark) => v // todo: application specific tags
-      case _ => problem(s"don't know how to construct '$v'", null) // todo: handle remaining cases; all values should carry a mark
-    }
-
-  def construct(parser: Parser): List[Any] = construct(parse(parser))
 
   def parse(parser: Parser): YAMLStream = {
     val event   = new Event
