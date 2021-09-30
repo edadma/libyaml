@@ -38,7 +38,7 @@ Include the following in your `build.sbt`:
 ```sbt
 resolvers += Resolver.githubPackages("edadma")
 
-libraryDependencies += "io.github.edadma" %%% "libyaml" % "0.1.0"
+libraryDependencies += "io.github.edadma" %%% "libyaml" % "0.1.5"
 
 ```
 
