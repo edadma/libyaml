@@ -1,6 +1,6 @@
 name := "libyaml"
 
-version := "0.1.6"
+version := "0.1.7"
 
 scalaVersion := "2.13.6"
 
@@ -40,7 +40,7 @@ homepage := Some(url("https://github.com/edadma/" + name.value))
 libraryDependencies += "org.scalatest" %%% "scalatest" % "3.2.9" % "test"
 
 libraryDependencies ++= Seq(
-  "io.github.edadma" %%% "datetime" % "0.1.10"
+  "io.github.edadma" %%% "datetime" % "0.1.11"
 )
 
 libraryDependencies ++= Seq(
