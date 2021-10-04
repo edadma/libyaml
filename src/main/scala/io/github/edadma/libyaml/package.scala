@@ -26,7 +26,7 @@ package object libyaml {
   private val INT60_REGEX = """([-+]?[1-9][0-9_]*(:[0-5]?[0-9])+)""".r
 
   val TIMESTAMP_REGEX: Regex =
-    """[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]|[0-9][0-9][0-9][0-9]-[0-9][0-9]?-[0-9][0-9]?(?:[Tt]|[ \t]+)[0-9][0-9]?:[0-9][0-9]:[0-9][0-9](?:\.[0-9]*)?(?:[ \t]*)(?:Z|[-+][0-9][0-9]?(?::[0-9][0-9])?)?""".r
+    """\d\d\d\d-\d\d-\d\d|\d\d\d\d-\d\d?-\d\d?(?:[Tt]|[ \t]+)\d\d?:\d\d:\d\d(?:\.\d*)?(?:[ \t]*)(?:Z|[-+]\d\d?(?::\d\d)?)?""".r
 
   implicit class ErrorType(val value: yaml_error_type_t) extends AnyVal
 
@@ -449,7 +449,7 @@ package object libyaml {
               case n                 => YAMLBigInt(n)
             }
           // todo: base 60
-          case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(Datetime.fromString(value))
+          case _ if TIMESTAMP_REGEX matches value => YAMLTimestamp(Datetime.fromString(value).timestamp)
           case _                                  => YAMLString(value)
         }
 
